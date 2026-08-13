@@ -43,4 +43,3 @@ See .env.example
 License & Security
 This scaffold is for demonstration. Before production, add monitoring, error reporting, strong rate-limiting, and audit logging as described in the security notes.
 
-Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
