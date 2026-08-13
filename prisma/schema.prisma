@@ -193,6 +193,7 @@ model UserPreferences {
   timezone        String? 
   theme           String? 
   lockdownActive  Boolean @default(false)
+  priorities      Json?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }

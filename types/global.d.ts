@@ -1,0 +1,5 @@
+declare module 'papaparse'
+declare module 'pdf-parse'
+declare module 'xlsx'
+declare module 'tesseract.js'
+declare module 'pdfjs-dist'
