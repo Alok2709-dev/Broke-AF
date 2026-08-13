@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#070709">
+<title>Broke AF — Universal Money Importer</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs" type="module"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{--bg:#070709;--panel:#101014;--line:rgba(255,255,255,.08);--purple:#9b5cff;--lime:#b8f35a;--red:#ff5d67}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:radial-gradient(circle at 15% 0%,rgba(155,92,255,.13),transparent 28%),radial-gradient(circle at 90% 10%,rgba(184,243,90,.05),transparent 25%),var(--bg);color:#f4f4f5;font-family:"DM Sans",sans-serif}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;opacity:.25;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:40px 40px}
+.glass{background:linear-gradient(145deg,rgba(20,20,25,.9),rgba(10,10,13,.9));border:1px solid var(--line);backdrop-filter:blur(18px)}
+button{transition:.2s ease}button:hover{transform:translateY(-1px)}button:active{transform:scale(.98)}
+input,select{font:inherit}input:focus,select:focus{outline:2px solid rgba(155,92,255,.6);outline-offset:1px}
+.progress{height:100%;border-radius:999px;transition:width .5s ease}
+.modal{display:none}.modal.show{display:flex}
+::-webkit-scrollbar{width:8px}::-webkit-scrollbar-thumb{background:#29292f;border-radius:20px}
+.drop{border:1px dashed rgba(255,255,255,.14);transition:.2s}.drop.drag{border-color:var(--purple);background:rgba(155,92,255,.06)}
+</style>
+</head>
+
+<body>
+<div id="setup" class="fixed inset-0 z-[100] bg-[#070709] overflow-y-auto">
+ <div class="min-h-full flex items-center justify-center p-5">
+  <div class="w-full max-w-xl glass rounded-[30px] p-7 sm:p-10">
+   <div class="flex items-center gap-3"><div class="w-11 h-11 rounded-2xl bg-purple-500/10 border border-purple-400/20 grid place-items-center"><i class="fa-solid fa-wallet text-purple-300"></i></div><div><b class="font-bold text-2xl">BROKE<span class="text-purple-400">AF</span></b><p class="text-[10px] uppercase tracking-[.25em] text-zinc-600">personal money OS</p></div></div>
+   <h1 class="font-bold text-4xl mt-8">Your money.<br><span class="text-purple-300">Your numbers.</span></h1>
+   <p class="text-zinc-500 mt-4 leading-6">No fake ₹7,000. Tell Broke AF your own budget and import whatever statement you actually have.</p>
+   <form id="setupForm" class="space-y-4 mt-7">
+    <input id="name" placeholder="Your name / nickname" class="w-full bg-black/30 border border-white/10 rounded-2xl p-4">
+    <input id="budget" required type="number" min="1" placeholder="Monthly budget e.g. 7000" class="w-full bg-black/30 border border-white/10 rounded-2xl p-4">
+    <select id="currency" class="w-full bg-black/30 border border-white/10 rounded-2xl p-4"><option value="INR">₹ INR</option><option value="USD">$ USD</option><option value="EUR">€ EUR</option><option value="GBP">£ GBP</option></select>
+    <button class="w-full bg-white text-black rounded-2xl py-4 font-black">Enter Broke AF <i class="fa-solid fa-arrow-right ml-2"></i></button>
+   </form>
+  </div>
+ </div>
+</div>
+
+<header class="max-w-7xl mx-auto px-5 sm:px-8 pt-7">
+ <div class="flex justify-between items-center">
+  <div class="flex gap-3 items-center"><div class="w-11 h-11 rounded-2xl bg-purple-500/10 border border-purple-400/20 grid place-items-center"><i class="fa-solid fa-wallet text-purple-300"></i></div><div><b class="text-2xl">BROKE<span class="text-purple-400">AF</span></b><p class="text-[10px] uppercase tracking-[.25em] text-zinc-600">universal money OS</p></div></div>
+  <button onclick="settings()" class="w-10 h-10 rounded-xl bg-white/5 text-zinc-400"><i class="fa-solid fa-gear"></i></button>
+ </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-5 sm:px-8 py-7">
+ <section class="glass rounded-[30px] p-6 sm:p-8">
+  <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-7">
+   <div><p class="text-xs uppercase tracking-[.25em] text-zinc-600">Hey <span id="hello">there</span> 👋</p><div class="text-5xl sm:text-6xl font-black mt-2" id="remaining">₹0</div><p class="text-sm text-zinc-500 mt-2">stash left · budget <b id="budgetLabel">₹0</b></p></div>
+   <div class="lg:text-right"><p class="text-xs uppercase tracking-[.2em] text-zinc-600">Broke Level</p><div class="flex gap-3 items-center mt-2"><span id="level" class="px-3 py-1.5 rounded-full bg-lime-400/10 text-lime-300 text-xs font-black">LEVEL 00</span><b id="levelText">Waiting for data</b></div></div>
+  </div>
+  <div class="mt-8"><div class="flex justify-between text-sm mb-2"><span>Burn rate <span id="mood" class="text-lime-300 ml-2">No data</span></span><b id="pct">0%</b></div><div class="h-3 bg-zinc-900 rounded-full overflow-hidden"><div id="bar" class="progress bg-purple-500" style="width:0"></div></div></div>
+ </section>
+
+ <section class="grid grid-cols-2 lg:grid-cols-5 gap-3 mt-4">
+  <div class="glass rounded-2xl p-4"><p class="text-xs text-zinc-600">Spent</p><b id="spent" class="text-xl block mt-2">₹0</b></div>
+  <div class="glass rounded-2xl p-4"><p class="text-xs text-zinc-600">Transactions</p><b id="count" class="text-xl block mt-2">0</b></div>
+  <div class="glass rounded-2xl p-4"><p class="text-xs text-zinc-600">Daily average</p><b id="avg" class="text-xl block mt-2">₹0</b></div>
+  <div class="glass rounded-2xl p-4"><p class="text-xs text-zinc-600">Available</p><b id="available" class="text-xl block mt-2">₹0</b></div>
+  <div class="glass rounded-2xl p-4 col-span-2 lg:col-span-1"><p class="text-xs text-zinc-600">Runway</p><b id="runway" class="text-xl block mt-2">—</b></div>
+ </section>
+
+ <section class="grid lg:grid-cols-3 gap-4 mt-4">
+  <div class="lg:col-span-2 glass rounded-3xl p-6">
+   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div><p class="text-xs uppercase tracking-[.2em] text-zinc-600">Universal importer</p><h2 class="text-xl font-bold mt-1">Drop literally your statement file</h2><p class="text-xs text-zinc-600 mt-1">PDF · CSV · XLSX · XLS · TXT · JSON · images</p></div>
+    <button onclick="document.getElementById('file').click()" class="px-4 py-3 rounded-xl bg-purple-500 font-bold text-xs"><i class="fa-solid fa-upload mr-2"></i>Choose file</button>
+   </div>
+   <div id="drop" class="drop rounded-2xl p-8 text-center mt-5 cursor-pointer" onclick="document.getElementById('file').click()">
+    <i class="fa-solid fa-cloud-arrow-up text-3xl text-zinc-600"></i>
+    <p class="font-bold mt-3">Drag & drop your file here</p>
+    <p class="text-xs text-zinc-600 mt-1">We'll inspect the file and extract transaction candidates.</p>
+    <input id="file" type="file" class="hidden" accept=".pdf,.csv,.xlsx,.xls,.txt,.json,.png,.jpg,.jpeg,.webp">
+   </div>
+   <div id="importStatus" class="hidden mt-4 rounded-2xl bg-zinc-900 p-4 text-xs"></div>
+  </div>
+
+  <div class="glass rounded-3xl p-6">
+   <p class="text-xs uppercase tracking-[.2em] text-zinc-600">AI coach</p><h2 class="text-xl font-bold mt-1">Roast & Toast</h2>
+   <div id="coach" class="mt-5 p-4 rounded-2xl border border-purple-400/10 bg-purple-400/5 text-sm leading-6 text-zinc-300">Import your actual transactions. Then I'll judge them. 😭</div>
+   <div class="grid grid-cols-2 gap-2 mt-3"><button onclick="coach('toast')" class="py-2.5 rounded-xl bg-lime-400/10 text-lime-300 text-xs font-bold">Toast</button><button onclick="coach('roast')" class="py-2.5 rounded-xl bg-red-400/10 text-red-300 text-xs font-bold">Roast</button></div>
+  </div>
+ </section>
+
+ <section class="grid lg:grid-cols-5 gap-4 mt-4">
+  <div class="lg:col-span-3 glass rounded-3xl p-6"><div class="flex justify-between"><div><p class="text-xs uppercase tracking-[.2em] text-zinc-600">Analytics</p><h2 class="text-xl font-bold mt-1">Where your money went</h2></div><button onclick="addTx()" class="w-10 h-10 rounded-xl bg-white/5"><i class="fa-solid fa-plus"></i></button></div><div id="categories" class="space-y-3 mt-5"></div></div>
+  <div class="lg:col-span-2 glass rounded-3xl p-6"><div class="flex justify-between"><div><p class="text-xs uppercase tracking-[.2em] text-zinc-600">Activity</p><h2 class="text-xl font-bold mt-1">Transactions</h2></div><button onclick="clearTx()" class="text-[10px] text-zinc-600 hover:text-red-400">Clear</button></div><div id="txs" class="space-y-2 mt-5 max-h-[450px] overflow-auto"></div></div>
+ </section>
+
+ <section class="mt-4"><div class="flex justify-between mb-4"><div><p class="text-xs uppercase tracking-[.2em] text-zinc-600">Secure the bag</p><h2 class="text-xl font-bold mt-1">Goal Stash 🎯</h2></div><button onclick="newGoal()" class="text-xs text-purple-400 font-bold">+ New goal</button></div><div id="goals" class="grid md:grid-cols-3 gap-4"></div></section>
+
+ <section class="mt-4 glass rounded-3xl p-6"><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-5"><div><p class="text-xs uppercase tracking-[.2em] text-red-400/70">Vice Vault</p><h2 class="text-xl font-black text-red-300 mt-1">Lockdown Mode</h2><p class="text-xs text-zinc-600 mt-1">A visual commitment mode for impulse spending.</p></div><button id="lock" onclick="toggleLock()" class="px-6 py-3.5 rounded-2xl border border-red-500/30 bg-red-500/10 text-red-300 font-black text-xs"><i class="fa-solid fa-lock mr-2"></i>Activate Lockdown</button></div></section>
+</main>
+
+<div id="modal" class="modal fixed inset-0 z-[200] items-center justify-center bg-black/80 p-5">
+ <div class="glass rounded-3xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto"><div class="flex justify-between items-center"><h3 id="modalTitle" class="text-xl font-bold">Review</h3><button onclick="closeModal()" class="text-zinc-500"><i class="fa-solid fa-xmark text-xl"></i></button></div><div id="modalBody" class="mt-5"></div></div>
+</div>
+
+<script>
+let pdfjs=null;
+const SKEY="broke_af_universal_v1";
+const CATS={
+ food:["Food & Delivery","fa-burger"],subscription:["Subscriptions","fa-repeat"],travel:["Travel & IRCTC","fa-train"],fitness:["Gym & Fitness","fa-dumbbell"],shopping:["Shopping","fa-bag-shopping"],bills:["Bills & Recharge","fa-mobile-screen"],education:["Education","fa-graduation-cap"],transfer:["Transfers","fa-arrow-right-arrow-left"],other:["Other","fa-receipt"]
+};
+const sym={INR:"₹",USD:"$",EUR:"€",GBP:"£"};
+let state=JSON.parse(localStorage.getItem(SKEY)||"null")||{name:"",budget:0,currency:"INR",tx:[],goals:[],locked:false};
+let pending=[];
+
+(async()=>{try{pdfjs=await import("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs");pdfjs.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs";}catch(e){console.warn("PDF library unavailable",e)}})();
+
+const $=id=>document.getElementById(id);
+const money=n=>(sym[state.currency]||"₹")+Math.round(Math.max(0,n)).toLocaleString("en-IN");
+const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+function save(){localStorage.setItem(SKEY,JSON.stringify(state))}
+function closeModal(){$("modal").classList.remove("show")}
+function modal(title,body){$("modalTitle").textContent=title;$("modalBody").innerHTML=body;$("modal").classList.add("show")}
+function catOf(s=""){s=s.toLowerCase();if(/zomato|swiggy|food|restaurant|mcdonald|domino|pizza|blinkit|zepto|instamart/.test(s))return"food";if(/spotify|netflix|prime|youtube|subscription|apple music|hotstar/.test(s))return"subscription";if(/irctc|train|metro|uber|ola|rapido|flight|bus|redbus/.test(s))return"travel";if(/gym|protein|cult|fitness|supplement/.test(s))return"fitness";if(/amazon|flipkart|myntra|shopping|mall|ajio/.test(s))return"shopping";if(/recharge|airtel|jio|vodafone|vi |electric|bill|broadband/.test(s))return"bills";if(/college|university|course|exam|book|education|school/.test(s))return"education";if(/upi|transfer|sent to|received from/.test(s))return"transfer";return"other"}
+
+$("setupForm").addEventListener("submit",e=>{e.preventDefault();state.name=$("name").value.trim()||"there";state.budget=+$("budget").value;state.currency=$("currency").value;state.tx=[];state.goals=[{name:"Emergency Stash",target:5000,saved:0,icon:"fa-shield-heart"},{name:"New Gear",target:3000,saved:0,icon:"fa-headphones"}];save();$("setup").style.display="none";render()});
+if(state.budget)$("setup").style.display="none";
+
+$("file").addEventListener("change",e=>{if(e.target.files[0])handleFile(e.target.files[0])});
+$("drop").addEventListener("dragover",e=>{e.preventDefault();$("drop").classList.add("drag")});
+$("drop").addEventListener("dragleave",()=>$("drop").classList.remove("drag"));
+$("drop").addEventListener("drop",e=>{e.preventDefault();$("drop").classList.remove("drag");if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0])});
+
+function status(msg,loading=false){$("importStatus").classList.remove("hidden");$("importStatus").innerHTML=(loading?'<i class="fa-solid fa-spinner fa-spin mr-2"></i>':'')+esc(msg)}
+
+async function handleFile(file){
+ status(`Inspecting ${file.name}…`,true);
+ try{
+  const ext=file.name.split(".").pop().toLowerCase();
+  let candidates=[];
+  if(ext==="csv"||ext==="txt")candidates=parseCSVText(await file.text());
+  else if(ext==="json")candidates=parseJSON(await file.text());
+  else if(ext==="xlsx"||ext==="xls")candidates=parseWorkbook(await file.arrayBuffer());
+  else if(ext==="pdf")candidates=await parsePDF(await file.arrayBuffer());
+  else if(["png","jpg","jpeg","webp"].includes(ext))candidates=await parseImage(file);
+  else throw new Error("Unsupported file type.");
+  pending=dedupe(candidates);
+  if(!pending.length)throw new Error("I could read the file, but couldn't confidently identify transaction rows. Try another statement format or use Add Transaction.");
+  showReview(file.name,pending);
+ }catch(err){console.error(err);status(err.message||"Could not process this file.");}
+}
+
+function parseCSVText(text){
+ const rows=[];let row=[],cell="",q=false;
+ for(let i=0;i<text.length;i++){let c=text[i];if(c==='"'){if(q&&text[i+1]==='"'){cell+='"';i++}else q=!q}else if(c===","&&!q){row.push(cell.trim());cell=""}else if((c==="\n"||c==="\r")&&!q){if(c==="\r"&&text[i+1]==="\n")i++;row.push(cell.trim());if(row.some(Boolean))rows.push(row);row=[];cell=""}else cell+=c}
+ if(cell||row.length){row.push(cell.trim());rows.push(row)}
+ return rowsToTransactions(rows);
+}
+function rowsToTransactions(rows){
+ if(!rows.length)return[];
+ const h=rows[0].map(x=>String(x).toLowerCase().replace(/[^a-z]/g,""));
+ const find=a=>h.findIndex(x=>a.some(n=>x.includes(n)));
+ let di=find(["date","transactiondate","valuedate","postingdate"]),mi=find(["merchant","description","narration","details","particular","payee","name"]),ai=find(["amount","debit","withdrawal","spent","transactionamount","value"]),ci=find(["category","type"]);
+ const out=[];
+ for(const r of rows.slice(1)){
+  const merchant=mi>=0?r[mi]:"Transaction";
+  let raw=ai>=0?r[ai]:"";
+  let amount=parseAmount(raw);
+  if(!amount){for(const x of r){const n=parseAmount(x);if(n){amount=n;break}}}
+  if(!amount)continue;
+  let date=di>=0?parseDate(r[di]):today();
+  out.push({date,merchant:merchant||"Transaction",amount,cat:ci>=0?catOf(r[ci]):catOf(merchant),confidence:ci>=0?.97:.86});
+ }
+ return out;
+}
+function parseAmount(v){if(v==null)return 0;let s=String(v).replace(/[₹$€£,\s]/g,"");s=s.replace(/(cr|dr)$/i,"");let n=parseFloat(s);return isFinite(n)&&n>0?n:0}
+function parseDate(v){if(!v)return today();let d=new Date(v);if(isNaN(d)){const m=String(v).match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);if(m)d=new Date(+m[3]<100?2000+(+m[3]):+m[3],+m[2]-1,+m[1])}return isNaN(d)?today():d.toISOString().slice(0,10)}
+function today(){return new Date().toISOString().slice(0,10)}
+function parseJSON(text){let j=JSON.parse(text);if(!Array.isArray(j))j=j.transactions||j.data||j.records||[];return j.map(x=>({date:parseDate(x.date||x.transactionDate||x.valueDate),merchant:x.merchant||x.description||x.narration||x.name||"Transaction",amount:parseAmount(x.amount||x.debit||x.withdrawal||x.spent),cat:catOf(x.category||x.description||x.merchant),confidence:.9})).filter(x=>x.amount)}
+function parseWorkbook(buf){const wb=XLSX.read(buf,{type:"array",cellDates:true});let best=[];for(const name of wb.SheetNames){const rows=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,defval:""});const tx=rowsToTransactions(rows);if(tx.length>best.length)best=tx}return best}
+async function parsePDF(buf){
+ if(!pdfjs)throw new Error("PDF engine is still loading. Try again in a few seconds.");
+ const pdf=await pdfjs.getDocument({data:buf}).promise;let all=[];
+ for(let p=1;p<=pdf.numPages;p++){const page=await pdf.getPage(p);const content=await page.getTextContent();const items=content.items.map(x=>({s:x.str,x:x.transform[4],y:x.transform[5]}));const lines={};items.forEach(it=>{const k=Math.round(it.y/3)*3;(lines[k]??=[]).push(it)});const text=Object.values(lines).sort((a,b)=>b[0].y-a[0].y).map(a=>a.sort((x,y)=>x.x-y.x).map(x=>x.s).join(" "));all.push(...parseStatementLines(text))}
+ return all;
+}
+function parseStatementLines(lines){
+ const out=[];
+ const dateRe=/\b(\d{1,2}[\/\-.](?:\d{1,2}|[A-Za-z]{3,9})[\/\-.]\d{2,4})\b/;
+ const amountRe=/((?:₹|Rs\.?|INR)?\s*\d{1,3}(?:,\d{3})*(?:\.\d{1,2})|\d+(?:\.\d{1,2}))/gi;
+ for(const line of lines){
+  const dm=line.match(dateRe);if(!dm)continue;
+  const nums=[...(line.matchAll(amountRe))].map(m=>parseAmount(m[1])).filter(Boolean);if(!nums.length)continue;
+  const amount=nums[nums.length-1];
+  let merchant=line.replace(dm[0],"").replace(amountRe," ").replace(/\s+/g," ").trim();
+  merchant=merchant.replace(/^(debit|credit|dr|cr|withdrawal|deposit)\s+/i,"").trim();
+  if(!merchant||merchant.length<2)merchant="Statement transaction";
+  out.push({date:parseDate(dm[1]),merchant,amount,cat:catOf(merchant),confidence:.68});
+ }
+ return out;
+}
+async function parseImage(file){
+ if(!window.Tesseract)throw new Error("OCR engine is still loading. Try again in a few seconds.");
+ status("Running OCR on the image. This can take a little while…",true);
+ const result=await Tesseract.recognize(file,"eng",{logger:m=>{if(m.status&&m.progress)status(`OCR: ${m.status} ${Math.round(m.progress*100)}%`,true)}});
+ return parseStatementLines(result.data.text.split(/\r?\n/));
+}
+function dedupe(a){const seen=new Set();return a.filter(x=>{const k=`${x.date}|${x.amount}|${x.merchant.toLowerCase().replace(/\W/g,"")}`;if(seen.has(k))return false;seen.add(k);return true})}
+
+function showReview(filename,items){
+ const rows=items.map((x,i)=>`<tr class="border-t border-white/5">
+ <td class="p-3"><input data-i="${i}" data-k="date" value="${esc(x.date)}" class="review w-full bg-black/20 rounded-lg p-2 text-xs"></td>
+ <td class="p-3"><input data-i="${i}" data-k="merchant" value="${esc(x.merchant)}" class="review w-full bg-black/20 rounded-lg p-2 text-xs"></td>
+ <td class="p-3"><input data-i="${i}" data-k="amount" value="${x.amount}" type="number" step=".01" class="review w-28 bg-black/20 rounded-lg p-2 text-xs"></td>
+ <td class="p-3"><select data-i="${i}" data-k="cat" class="review bg-black/20 rounded-lg p-2 text-xs">${Object.entries(CATS).map(([k,v])=>`<option value="${k}" ${x.cat===k?"selected":""}>${v[0]}</option>`).join("")}</select></td>
+ <td class="p-3 text-[10px] ${x.confidence>.85?"text-lime-300":"text-yellow-300"}">${Math.round(x.confidence*100)}%</td>
+ </tr>`).join("");
+ modal("Review imported transactions",`
+ <div class="p-4 rounded-2xl bg-purple-500/5 border border-purple-400/10 mb-4"><p class="text-xs text-zinc-400"><b class="text-white">${items.length}</b> transaction candidates found in <b class="text-white">${esc(filename)}</b>. Review them before they affect your dashboard.</p></div>
+ <div class="overflow-auto max-h-[52vh] border border-white/5 rounded-2xl"><table class="w-full text-left min-w-[760px]"><thead class="sticky top-0 bg-[#111116]"><tr class="text-[10px] uppercase tracking-wider text-zinc-600"><th class="p-3">Date</th><th class="p-3">Merchant</th><th class="p-3">Amount</th><th class="p-3">Category</th><th class="p-3">Confidence</th></tr></thead><tbody>${rows}</tbody></table></div>
+ <div class="flex flex-col sm:flex-row justify-between gap-3 mt-5"><button onclick="closeModal()" class="px-5 py-3 rounded-xl bg-white/5 text-zinc-400 text-xs font-bold">Cancel</button><button onclick="confirmImport()" class="px-5 py-3 rounded-xl bg-purple-500 text-white text-xs font-black">Import ${items.length} transactions <i class="fa-solid fa-check ml-2"></i></button></div>`);
+}
+function confirmImport(){
+ document.querySelectorAll(".review").forEach(el=>{const i=+el.dataset.i;pending[i][el.dataset.k]=el.dataset.k==="amount"?+el.value:el.value});
+ pending=pending.filter(x=>x.amount>0&&x.merchant.trim());
+ state.tx.push(...pending.map(x=>({id:crypto.randomUUID(),...x})));save();pending=[];closeModal();render();status("Import complete. Dashboard updated.");
+}
+
+function addTx(){modal("Add transaction",`<form onsubmit="manualTx(event)" class="space-y-4"><input id="m" required placeholder="Merchant / description" class="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-sm"><div class="grid grid-cols-2 gap-3"><input id="a" required type="number" min=".01" step=".01" placeholder="Amount" class="bg-black/30 border border-white/10 rounded-xl p-3 text-sm"><input id="d" required type="date" value="${today()}" class="bg-black/30 border border-white/10 rounded-xl p-3 text-sm"></div><select id="c" class="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-sm">${Object.entries(CATS).map(([k,v])=>`<option value="${k}">${v[0]}</option>`).join("")}</select><button class="w-full py-3 rounded-xl bg-purple-500 font-bold">Add transaction</button></form>`)}
+function manualTx(e){e.preventDefault();state.tx.push({id:crypto.randomUUID(),merchant:$("m").value,amount:+$("a").value,date:$("d").value,cat:$("c").value,confidence:1});save();closeModal();render()}
+function newGoal(){modal("New goal",`<form onsubmit="goal(event)" class="space-y-4"><input id="gn" required placeholder="Goal name" class="w-full bg-black/30 border border-white/10 rounded-xl p-3"><input id="gt" required type="number" min="1" placeholder="Target amount" class="w-full bg-black/30 border border-white/10 rounded-xl p-3"><button class="w-full py-3 rounded-xl bg-lime-400 text-black font-black">Create goal</button></form>`)}
+function goal(e){e.preventDefault();state.goals.push({name:$("gn").value,target:+$("gt").value,saved:0,icon:"fa-bullseye"});save();closeModal();render()}
+function settings(){modal("Settings",`<form onsubmit="saveSettings(event)" class="space-y-4"><input id="sn" value="${esc(state.name)}" class="w-full bg-black/30 border border-white/10 rounded-xl p-3"><input id="sb" type="number" min="1" value="${state.budget}" class="w-full bg-black/30 border border-white/10 rounded-xl p-3"><select id="sc" class="w-full bg-black/30 border border-white/10 rounded-xl p-3">${Object.keys(sym).map(k=>`<option ${state.currency===k?"selected":""}>${k}</option>`).join("")}</select><button class="w-full py-3 rounded-xl bg-purple-500 font-bold">Save</button><button type="button" onclick="localStorage.removeItem(SKEY);location.reload()" class="w-full py-3 rounded-xl bg-red-500/10 text-red-300 text-xs">Reset app</button></form>`)}
+function saveSettings(e){e.preventDefault();state.name=$("sn").value||"there";state.budget=+$("sb").value;state.currency=$("sc").value;save();closeModal();render()}
+function toggleLock(){state.locked=!state.locked;save();render()}
+function clearTx(){if(confirm("Delete every transaction from this browser?")){state.tx=[];save();render()}}
+function coach(type){const spent=state.tx.reduce((s,t)=>s+t.amount,0);const food=state.tx.filter(t=>t.cat==="food").reduce((s,t)=>s+t.amount,0);const msgs=type==="toast"?[`You tracked ${state.tx.length} real transactions. That's already better than guessing.`,`You still have ${money(Math.max(0,state.budget-spent))}. Financial character development.`,`Data first, judgement later. We're actually cooking now.`]:[`Bro, ${money(spent)} has already left the budget.`,`Food is ${money(food)}. The kitchen would like a word.`,"Your wallet has evidence. I am simply presenting the evidence."];$("coach").textContent=msgs[Math.floor(Math.random()*msgs.length)]}
+function render(){
+ if(!state.budget)return;
+ const spent=state.tx.reduce((s,t)=>s+t.amount,0),avail=state.budget-spent,p=state.budget?spent/state.budget*100:0;
+ $("hello").textContent=state.name||"there";$("remaining").textContent=money(Math.max(avail,0));$("budgetLabel").textContent=money(state.budget);$("spent").textContent=money(spent);$("available").textContent=money(Math.max(avail,0));$("count").textContent=state.tx.length;$("pct").textContent=p.toFixed(1)+"%";$("bar").style.width=Math.min(100,p)+"%";
+ const days=new Set(state.tx.map(x=>x.date)).size,avg=days?spent/days:0;$("avg").textContent=money(avg);$("runway").textContent=avg?Math.floor(Math.max(avail,0)/avg)+"d":"—";
+ const lvl=!state.tx.length?["LEVEL 00","Waiting for data"]:p<30?["LEVEL 01","Financially Alive"]:p<55?["LEVEL 02","Doing Fine"]:p<75?["LEVEL 03","Budget Survivor"]:p<90?["LEVEL 04","Dangerously Broke"]:["LEVEL 05","Certified Cooked"];$("level").textContent=lvl[0];$("levelText").textContent=lvl[1];$("mood").textContent=!state.tx.length?"No data":p<55?"Looking healthy":p<75?"Getting spicy":p<90?"Bro slow down":"YOU ARE COOKED 💀";$("lock").innerHTML=state.locked?'<i class="fa-solid fa-lock-open mr-2"></i>Deactivate Lockdown':'<i class="fa-solid fa-lock mr-2"></i>Activate Lockdown';document.body.style.filter=state.locked?"saturate(.75)":"none";renderCats();renderTx();renderGoals()
+}
+function renderCats(){const sums={};Object.keys(CATS).forEach(k=>sums[k]=0);state.tx.forEach(t=>sums[t.cat]=(sums[t.cat]||0)+t.amount);const max=Math.max(...Object.values(sums),1);$("categories").innerHTML=Object.entries(sums).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="p-4 rounded-2xl bg-zinc-900/65 border border-white/5"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-zinc-800 grid place-items-center"><i class="fa-solid ${CATS[k][1]} text-zinc-300"></i></div><div class="flex-1"><div class="flex justify-between"><span class="text-sm font-semibold">${CATS[k][0]}</span><b>${money(v)}</b></div><div class="h-1.5 bg-zinc-800 rounded-full mt-2 overflow-hidden"><div class="progress bg-purple-500" style="width:${v/max*100}%"></div></div></div></div></div>`).join("")}
+function renderTx(){$("txs").innerHTML=state.tx.length?[...state.tx].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,50).map(t=>`<div class="flex items-center gap-3 p-3 rounded-xl bg-zinc-900/60"><div class="w-9 h-9 rounded-lg bg-zinc-800 grid place-items-center"><i class="fa-solid ${CATS[t.cat]?.[1]||CATS.other[1]} text-xs"></i></div><div class="flex-1 min-w-0"><p class="text-xs font-semibold truncate">${esc(t.merchant)}</p><p class="text-[10px] text-zinc-700">${esc(t.date)} · ${CATS[t.cat]?.[0]||"Other"}</p></div><b class="text-xs">${money(t.amount)}</b></div>`).join(""):'<div class="py-14 text-center text-zinc-700"><i class="fa-solid fa-inbox text-2xl"></i><p class="text-xs mt-3">No transactions yet.</p></div>'}
+function renderGoals(){$("goals").innerHTML=state.goals.map((g,i)=>{const p=Math.min(100,g.saved/g.target*100);return`<div class="glass rounded-3xl p-5"><div class="flex justify-between"><div class="flex gap-3 items-center"><div class="w-11 h-11 rounded-xl bg-purple-500/10 grid place-items-center"><i class="fa-solid ${g.icon||"fa-bullseye"} text-purple-300"></i></div><div><b class="text-sm">${esc(g.name)}</b><p class="text-[10px] text-zinc-600">Target ${money(g.target)}</p></div></div><b class="text-xs text-lime-300">${Math.round(p)}%</b></div><div class="h-2 bg-zinc-900 rounded-full mt-5"><div class="progress bg-lime-400" style="width:${p}%"></div></div><div class="flex justify-between text-[10px] text-zinc-600 mt-2"><span>${money(g.saved)} saved</span><span>${money(Math.max(0,g.target-g.saved))} left</span></div><button onclick="state.goals[${i}].saved=Math.min(state.goals[${i}].target,state.goals[${i}].saved+100);save();render()" class="w-full mt-4 py-2.5 rounded-xl bg-zinc-900 border border-white/5 text-xs font-bold">Add ${money(100)}</button></div>`}).join("")}
+
+render();
+</script>
+</body>
+</html>

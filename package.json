@@ -1,0 +1,44 @@
+{
+  "name": "broke-af",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@prisma/client": "4.15.0",
+    "autoprefixer": "latest",
+    "bcryptjs": "latest",
+    "clsx": "latest",
+    "framer-motion": "latest",
+    "ky": "latest",
+    "lucide-react": "latest",
+    "next": "latest",
+    "next-auth": "latest",
+    "openai": "latest",
+    "papaparse": "latest",
+    "pdf-parse": "latest",
+    "postcss": "latest",
+    "prisma": "4.15.0",
+    "react": "latest",
+    "react-dom": "latest",
+    "recharts": "latest",
+    "swr": "latest",
+    "tailwindcss": "latest",
+    "tesseract.js": "latest",
+    "typescript": "latest",
+    "xlsx": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "eslint": "latest",
+    "eslint-config-next": "latest"
+  }
+}
