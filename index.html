@@ -351,9 +351,9 @@ async function parsePDF(buf,password){
  for(let p=1;p<=pdf.numPages;p++){
   const page=await pdf.getPage(p);const content=await page.getTextContent();
   const parsed=parsePDFTableItems(content.items);
-  if(parsed.recognized)all.push(...parsed.transactions);
+  if(parsed.transactions.length)all.push(...parsed.transactions);
   else{
-   const items=content.items.map(x=>({s:x.str,x:x.transform[4],y:x.transform[5]}));const lines={};items.forEach(it=>{const k=Math.round(it.y/3)*3;(lines[k]??=[]).push(it)});const text=Object.values(lines).sort((a,b)=>b[0].y-a[0].y).map(a=>a.sort((x,y)=>x.x-y.x).map(x=>x.s).join(" "));all.push(...parseStatementLines(text));
+   const items=content.items.map(x=>({s:x.str,x:x.transform[4],y:x.transform[5]}));const lines={};items.forEach(it=>{const k=Math.round(it.y/3)*3;(lines[k]??=[]).push(it)});const text=Object.values(lines).sort((a,b)=>b[0].y-a[0].y).map(a=>a.sort((x,y)=>x.x-y.x).map(x=>x.s).join(" "));all.push(...parseStatementLines(text),...parseWalletStatementLines(text));
   }
  }
  return all;
@@ -441,6 +441,41 @@ function parseStatementLines(lines){
   if(!/[a-z]{2}/i.test(merchant)||/^(?:opening|closing)?\s*balance$/i.test(merchant))continue;
   out.push({date:parseDate(dateText),merchant,amount,cat:catOf(merchant),confidence:amounts.length>1?.6:.68});
  }
+ return out;
+}
+function parseWalletDate(value){
+ const text=String(value).trim();
+ const match=text.match(/^(\d{1,2})\s+([A-Za-z]{3,9}),?\s+(\d{2,4})$/)||text.match(/^([A-Za-z]{3,9})\s+(\d{1,2}),?\s+(\d{2,4})$/);
+ if(!match)return parseDate(text);
+ const day=Number(match[1].length<=2&&/^\d+$/.test(match[1])?match[1]:match[2]);
+ const monthText=/^\d+$/.test(match[1])?match[2]:match[1];
+ let year=Number(match[3]);if(year<100)year+=year<50?2000:1900;
+ const month=["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"].indexOf(monthText.slice(0,3).toLowerCase());
+ if(month<0)return parseDate(text);
+ const date=new Date(Date.UTC(year,month,day));
+ return date.getUTCFullYear()===year&&date.getUTCMonth()===month&&date.getUTCDate()===day?date.toISOString().slice(0,10):parseDate(text);
+}
+function parseWalletStatementLines(lines){
+ const dateRe=/\b(?:\d{4}[\/.-]\d{1,2}[\/.-]\d{1,2}|\d{1,2}[\/.-](?:\d{1,2}|[A-Za-z]{3,9})[\/.-]\d{2,4}|\d{1,2}\s+[A-Za-z]{3,9},?\s+\d{2,4}|[A-Za-z]{3,9}\s+\d{1,2},?\s+\d{2,4})\b/gi;
+ const dates=[];
+ lines.forEach((line,index)=>{for(const match of line.matchAll(dateRe))dates.push({index,date:match[0]})});
+ const out=[];
+ dates.forEach((entry,index)=>{
+  const block=lines.slice(entry.index,index+1<dates.length?dates[index+1].index:lines.length);
+  const text=block.join(" ");
+  if(/\b(?:received\s+from|money\s+received|credited\s+by|cashback|refund|reversal|money back)\b/i.test(text))return;
+  const amountLine=block.find(line=>/(?:\u20B9|Rs\.?|INR)\s*[\d,]+(?:\.\d{1,2})?/i.test(line));
+  const amountMatch=amountLine?.match(/(?:\u20B9|Rs\.?|INR)\s*([\d,]+(?:\.\d{1,2})?)/i);
+  const amount=amountMatch?parseAmount(amountMatch[1]):0;
+  if(!amount||amount>=1000000000)return;
+  const merchantLine=block.find(line=>/\b(?:paid|sent|payment)\s+to\b/i.test(line));
+  if(!merchantLine)return;
+  const merchant=merchantLine
+   .replace(/\b(?:paid|sent|payment)\s+to\b\s*:*/i,"")
+   .replace(/\s+/g," ").trim();
+  if(!merchant||!/[a-z]{2}/i.test(merchant))return;
+  out.push({date:parseWalletDate(entry.date),merchant,amount,cat:catOf(merchant),confidence:.9});
+ });
  return out;
 }
 async function parseImage(file){
