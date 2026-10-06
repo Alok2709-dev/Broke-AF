@@ -348,15 +348,31 @@ async function parseWorkbookWithPassword(buf){
 async function parsePDF(buf,password){
  if(!pdfjs)throw new Error("PDF engine is still loading. Try again in a few seconds.");
  const pdf=await pdfjs.getDocument({data:new Uint8Array(buf.slice(0)),...(password===undefined?{}:{password})}).promise;let all=[];
+ let allText=[];
  for(let p=1;p<=pdf.numPages;p++){
   const page=await pdf.getPage(p);const content=await page.getTextContent();
+  const items=content.items.map(x=>({s:x.str,x:x.transform[4],y:x.transform[5]}));const lines={};items.forEach(it=>{const k=Math.round(it.y/3)*3;(lines[k]??=[]).push(it)});const text=Object.values(lines).sort((a,b)=>b[0].y-a[0].y).map(a=>a.sort((x,y)=>x.x-y.x).map(x=>x.s).join(" "));allText.push(...text);
   const parsed=parsePDFTableItems(content.items);
   if(parsed.transactions.length)all.push(...parsed.transactions);
-  else{
-   const items=content.items.map(x=>({s:x.str,x:x.transform[4],y:x.transform[5]}));const lines={};items.forEach(it=>{const k=Math.round(it.y/3)*3;(lines[k]??=[]).push(it)});const text=Object.values(lines).sort((a,b)=>b[0].y-a[0].y).map(a=>a.sort((x,y)=>x.x-y.x).map(x=>x.s).join(" "));all.push(...parseStatementLines(text),...parseWalletStatementLines(text));
-  }
+  else all.push(...parseStatementLines(text),...parseWalletStatementLines(text));
+ }
+ if(!all.length){
+  const paytmMessage=getPaytmIncomeOnlyMessage(allText);
+  if(paytmMessage)throw new Error(paytmMessage);
  }
  return all;
+}
+function getPaytmIncomeOnlyMessage(lines){
+ const text=lines.join(" ").replace(/\s+/g," ");
+ if(!/\bPaytm Statement\b/i.test(text)||!/\bTransaction Details\b/i.test(text))return null;
+ const paid=text.match(/\b(\d[\d,]*)\s+payments?\s+made\b/i);
+ const received=text.match(/\b(\d[\d,]*)\s+payments?\s+received\b/i);
+ if(!paid||!received)return null;
+ const paidCount=Number(paid[1].replace(/,/g,""));
+ const receivedCount=Number(received[1].replace(/,/g,""));
+ if(paidCount!==0||receivedCount===0)return null;
+ const countLabel=(count,singular,plural)=>`${count} ${count===1?singular:plural}`;
+ return `This Paytm statement has ${countLabel(paidCount,"payment made","payments made")} and ${countLabel(receivedCount,"payment received","payments received")}. The importer currently supports expenses only, so received payments were not imported.`;
 }
 function parsePDFTableItems(items){
  const lines=[];
