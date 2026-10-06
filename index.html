@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#070709">
-<title>Broke AF — Universal Money Importer</title>
+<title>Broke AF — Student Money Control</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs" type="module"></script>
@@ -25,6 +25,11 @@ input,select{font:inherit}input:focus,select:focus{outline:2px solid rgba(155,92
 .modal{display:none}.modal.show{display:flex}
 ::-webkit-scrollbar{width:8px}::-webkit-scrollbar-thumb{background:#29292f;border-radius:20px}
 .drop{border:1px dashed rgba(255,255,255,.14);transition:.2s}.drop.drag{border-color:var(--purple);background:rgba(155,92,255,.06)}
+.app-nav-link{display:inline-flex;align-items:center;gap:.5rem;border:1px solid transparent;border-radius:12px;padding:.65rem .85rem;color:#a1a1aa;font-size:.8rem;font-weight:700;white-space:nowrap}
+.app-nav-link:hover{background:rgba(255,255,255,.05);color:#fff}
+.app-nav-link.active{background:rgba(155,92,255,.13);border-color:rgba(155,92,255,.18);color:#d8b4fe}
+.app-view[hidden]{display:none!important}
+@media(max-width:767px){body{padding-bottom:76px}.mobile-nav{padding-bottom:env(safe-area-inset-bottom)}}
 </style>
 </head>
 
@@ -34,7 +39,7 @@ input,select{font:inherit}input:focus,select:focus{outline:2px solid rgba(155,92
   <div class="w-full max-w-xl glass rounded-[30px] p-7 sm:p-10">
    <div class="flex items-center gap-3"><div class="w-11 h-11 rounded-2xl bg-purple-500/10 border border-purple-400/20 grid place-items-center"><i class="fa-solid fa-wallet text-purple-300"></i></div><div><b class="font-bold text-2xl">BROKE<span class="text-purple-400">AF</span></b><p class="text-[10px] uppercase tracking-[.25em] text-zinc-600">personal money OS</p></div></div>
    <h1 class="font-bold text-4xl mt-8">Your money.<br><span class="text-purple-300">Your numbers.</span></h1>
-   <p class="text-zinc-500 mt-4 leading-6">No fake ₹7,000. Tell Broke AF your own budget and import whatever statement you actually have.</p>
+   <p class="text-zinc-500 mt-4 leading-6">Track daily spending, understand your money, and split bills with friends. Start with your monthly budget.</p>
    <form id="setupForm" class="space-y-4 mt-7">
     <input id="name" placeholder="Your name / nickname" class="w-full bg-black/30 border border-white/10 rounded-2xl p-4">
     <input id="budget" required type="number" min="1" placeholder="Monthly budget e.g. 7000" class="w-full bg-black/30 border border-white/10 rounded-2xl p-4">
@@ -45,61 +50,107 @@ input,select{font:inherit}input:focus,select:focus{outline:2px solid rgba(155,92
  </div>
 </div>
 
-<header class="max-w-7xl mx-auto px-5 sm:px-8 pt-7">
+<header class="max-w-7xl mx-auto px-5 sm:px-8 pt-5 sm:pt-7">
  <div class="flex justify-between items-center">
-  <div class="flex gap-3 items-center"><div class="w-11 h-11 rounded-2xl bg-purple-500/10 border border-purple-400/20 grid place-items-center"><i class="fa-solid fa-wallet text-purple-300"></i></div><div><b class="text-2xl">BROKE<span class="text-purple-400">AF</span></b><p class="text-[10px] uppercase tracking-[.25em] text-zinc-600">universal money OS</p></div></div>
+  <button onclick="showView('dashboard')" class="flex gap-3 items-center text-left"><div class="w-10 h-10 rounded-2xl bg-purple-500/10 border border-purple-400/20 grid place-items-center"><i class="fa-solid fa-wallet text-purple-300"></i></div><div><b class="text-xl">BROKE<span class="text-purple-400">AF</span></b><p class="text-[10px] uppercase tracking-[.2em] text-zinc-600">student money control</p></div></button>
   <button onclick="settings()" class="w-10 h-10 rounded-xl bg-white/5 text-zinc-400"><i class="fa-solid fa-gear"></i></button>
  </div>
 </header>
+<nav aria-label="Main navigation" class="max-w-7xl mx-auto px-5 sm:px-8 mt-4 hidden md:flex items-center gap-1 border-b border-white/5 pb-3">
+ <button class="app-nav-link" data-nav="dashboard" onclick="showView('dashboard')"><i class="fa-solid fa-house"></i>Dashboard</button>
+ <button class="app-nav-link" data-nav="expenses" onclick="showView('expenses')"><i class="fa-solid fa-receipt"></i>Expenses</button>
+ <button class="app-nav-link" data-nav="ai" onclick="showView('ai')"><i class="fa-solid fa-wand-magic-sparkles"></i>AI Coach</button>
+ <button class="app-nav-link" data-nav="split" onclick="showView('split')"><i class="fa-solid fa-people-group"></i>Split Bills</button>
+ <button class="app-nav-link" data-nav="goals" onclick="showView('goals')"><i class="fa-solid fa-bullseye"></i>Goals</button>
+ <button class="app-nav-link" data-nav="more" onclick="showView('more')"><i class="fa-solid fa-ellipsis"></i>More</button>
+</nav>
 
-<main class="max-w-7xl mx-auto px-5 sm:px-8 py-7">
- <section class="glass rounded-[30px] p-6 sm:p-8">
+<main class="max-w-7xl mx-auto px-4 sm:px-8 py-5 sm:py-7">
+ <div class="app-view space-y-4" data-view="dashboard">
+ <section id="budgetHero" class="glass rounded-3xl p-5 sm:p-8">
   <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-7">
-   <div><p class="text-xs uppercase tracking-[.25em] text-zinc-600">Hey <span id="hello">there</span> 👋</p><div class="text-5xl sm:text-6xl font-black mt-2" id="remaining">₹0</div><p class="text-sm text-zinc-500 mt-2">stash left · budget <b id="budgetLabel">₹0</b></p></div>
+   <div><p class="text-xs uppercase tracking-[.2em] text-zinc-500">Hey <span id="hello">there</span> 👋 · MONTHLY BUDGET LEFT</p><div class="text-5xl sm:text-6xl font-black mt-2" id="remaining">₹0</div><p class="text-sm text-zinc-400 mt-2">of <b id="budgetLabel">₹0</b> monthly budget</p></div>
    <div class="lg:text-right"><p class="text-xs uppercase tracking-[.2em] text-zinc-600">Broke Level</p><div class="flex gap-3 items-center mt-2"><span id="level" class="px-3 py-1.5 rounded-full bg-lime-400/10 text-lime-300 text-xs font-black">LEVEL 00</span><b id="levelText">Waiting for data</b></div></div>
   </div>
-  <div class="mt-8"><div class="flex justify-between text-sm mb-2"><span>Burn rate <span id="mood" class="text-lime-300 ml-2">No data</span></span><b id="pct">0%</b></div><div class="h-3 bg-zinc-900 rounded-full overflow-hidden"><div id="bar" class="progress bg-purple-500" style="width:0"></div></div></div>
+  <div class="mt-6"><div class="flex justify-between text-xs mb-2"><span class="text-zinc-400">Monthly budget used <span id="mood" class="text-lime-300 ml-2">No data</span></span><b id="pct">0%</b></div><div class="h-2.5 bg-zinc-900 rounded-full overflow-hidden"><div id="bar" class="progress bg-purple-500" style="width:0"></div></div></div>
  </section>
 
- <section class="grid grid-cols-2 lg:grid-cols-5 gap-3 mt-4">
-  <div class="glass rounded-2xl p-4"><p class="text-xs text-zinc-600">Spent</p><b id="spent" class="text-xl block mt-2">₹0</b></div>
-  <div class="glass rounded-2xl p-4"><p class="text-xs text-zinc-600">Transactions</p><b id="count" class="text-xl block mt-2">0</b></div>
-  <div class="glass rounded-2xl p-4"><p class="text-xs text-zinc-600">Daily average</p><b id="avg" class="text-xl block mt-2">₹0</b></div>
-  <div class="glass rounded-2xl p-4"><p class="text-xs text-zinc-600">Available</p><b id="available" class="text-xl block mt-2">₹0</b></div>
-  <div class="glass rounded-2xl p-4 col-span-2 lg:col-span-1"><p class="text-xs text-zinc-600">Runway</p><b id="runway" class="text-xl block mt-2">—</b></div>
+ <section class="grid grid-cols-3 gap-3" id="statsStrip">
+  <div class="glass rounded-2xl p-4"><p class="text-xs text-zinc-500">Spent this month</p><b id="spent" class="text-lg sm:text-xl block mt-2">₹0</b></div>
+  <div class="glass rounded-2xl p-4"><p class="text-xs text-zinc-500">Today</p><b id="todaySpend" class="text-lg sm:text-xl block mt-2">₹0</b></div>
+  <div class="glass rounded-2xl p-4"><p class="text-xs text-zinc-500">Expenses logged</p><b id="count" class="text-lg sm:text-xl block mt-2">0</b></div><span id="available" class="hidden"></span><span id="avg" class="hidden"></span><span id="runway" class="hidden"></span>
  </section>
 
- <section class="grid lg:grid-cols-3 gap-4 mt-4">
-  <div class="lg:col-span-2 glass rounded-3xl p-6">
+ <section class="grid sm:grid-cols-3 gap-3" aria-label="Quick actions">
+  <button onclick="addTx()" class="rounded-2xl bg-purple-500 hover:bg-purple-400 p-4 text-left font-black shadow-lg shadow-purple-950/30"><span class="flex items-center justify-between"><span><span class="block text-sm">Add Expense</span><span class="block text-[11px] font-medium text-purple-100/75 mt-1">Track a purchase</span></span><i class="fa-solid fa-plus text-xl"></i></span></button>
+  <button onclick="showView('ai')" class="glass rounded-2xl p-4 text-left hover:border-purple-400/30"><span class="flex items-center justify-between"><span><span class="block text-sm font-bold">AI Money Coach</span><span class="block text-[11px] text-zinc-500 mt-1">Understand your spending</span></span><i class="fa-solid fa-wand-magic-sparkles text-purple-300"></i></span></button>
+  <button onclick="showView('split')" class="glass rounded-2xl p-4 text-left hover:border-lime-400/30"><span class="flex items-center justify-between"><span><span class="block text-sm font-bold">Split a Bill</span><span class="block text-[11px] text-zinc-500 mt-1">Share costs with friends</span></span><i class="fa-solid fa-people-group text-lime-300"></i></span></button>
+ </section>
+
+ <section id="homeSummary" class="grid lg:grid-cols-5 gap-4">
+  <div class="lg:col-span-2 glass rounded-3xl p-5 sm:p-6"><div><p class="text-xs uppercase tracking-[.18em] text-zinc-500">THIS MONTH</p><h2 class="text-lg font-bold mt-1">Where it went</h2></div><div id="homeCategories" class="mt-4 space-y-3"></div><button onclick="showView('expenses')" class="mt-4 text-xs text-purple-300 font-bold">View expense details <i class="fa-solid fa-arrow-right ml-1"></i></button></div>
+  <div class="lg:col-span-3 glass rounded-3xl p-5 sm:p-6"><div class="flex justify-between items-center"><div><p class="text-xs uppercase tracking-[.18em] text-zinc-500">RECENT EXPENSES</p><h2 class="text-lg font-bold mt-1">Your latest spending</h2></div><button onclick="showView('expenses')" class="text-xs text-purple-300 font-bold">View all</button></div><div id="homeRecent" class="mt-3 divide-y divide-white/5"></div></div>
+ </section>
+ <section class="glass rounded-3xl p-5 sm:p-6"><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div><p class="text-xs uppercase tracking-[.18em] text-purple-300">AI MONEY COACH</p><h2 class="text-lg font-bold mt-1">A clearer read on your money</h2></div><button onclick="showView('ai')" class="text-xs text-purple-300 font-bold">Full analysis <i class="fa-solid fa-arrow-right ml-1"></i></button></div><p id="homeAiInsight" class="mt-4 text-sm leading-6 text-zinc-300"></p></section>
+ </div>
+
+ <section class="app-view hidden glass rounded-3xl p-5 sm:p-6 space-y-4" data-view="more" hidden>
+  <div>
    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-    <div><p class="text-xs uppercase tracking-[.2em] text-zinc-600">Universal importer</p><h2 class="text-xl font-bold mt-1">Drop literally your statement file</h2><p class="text-xs text-zinc-600 mt-1">PDF · CSV · XLSX · XLS · TXT · JSON · images</p></div>
+    <div><p class="text-xs uppercase tracking-[.18em] text-zinc-500">IMPORT STATEMENT</p><h1 class="text-2xl font-bold mt-1">Bring in your transactions</h1><p class="text-xs text-zinc-500 mt-1">PDF · CSV · XLSX · XLS · TXT · JSON · images</p></div>
     <button onclick="document.getElementById('file').click()" class="px-4 py-3 rounded-xl bg-purple-500 font-bold text-xs"><i class="fa-solid fa-upload mr-2"></i>Choose file</button>
    </div>
-   <div id="drop" class="drop rounded-2xl p-8 text-center mt-5 cursor-pointer" onclick="document.getElementById('file').click()">
+   <div id="drop" class="drop rounded-2xl p-7 text-center mt-5 cursor-pointer" onclick="document.getElementById('file').click()">
     <i class="fa-solid fa-cloud-arrow-up text-3xl text-zinc-600"></i>
-    <p class="font-bold mt-3">Drag & drop your file here</p>
-    <p class="text-xs text-zinc-600 mt-1">We'll inspect the file and extract transaction candidates.</p>
+    <p class="font-bold mt-3">Drop a statement here</p>
+    <p class="text-xs text-zinc-500 mt-1">Review every detected expense before adding it.</p>
     <input id="file" type="file" class="hidden" accept=".pdf,.csv,.xlsx,.xls,.txt,.json,.png,.jpg,.jpeg,.webp">
    </div>
    <div id="importStatus" class="hidden mt-4 rounded-2xl bg-zinc-900 p-4 text-xs"></div>
   </div>
-
-  <div class="glass rounded-3xl p-6">
-   <p class="text-xs uppercase tracking-[.2em] text-zinc-600">AI coach</p><h2 class="text-xl font-bold mt-1">Roast & Toast</h2>
-   <div id="coach" class="mt-5 p-4 rounded-2xl border border-purple-400/10 bg-purple-400/5 text-sm leading-6 text-zinc-300">Import your actual transactions. Then I'll judge them. 😭</div>
-   <div class="grid grid-cols-2 gap-2 mt-3"><button onclick="coach('toast')" class="py-2.5 rounded-xl bg-lime-400/10 text-lime-300 text-xs font-bold">Toast</button><button onclick="coach('roast')" class="py-2.5 rounded-xl bg-red-400/10 text-red-300 text-xs font-bold">Roast</button></div>
-  </div>
  </section>
 
- <section class="grid lg:grid-cols-5 gap-4 mt-4">
-  <div class="lg:col-span-3 glass rounded-3xl p-6"><div class="flex justify-between"><div><p class="text-xs uppercase tracking-[.2em] text-zinc-600">Analytics</p><h2 class="text-xl font-bold mt-1">Where your money went</h2></div><button onclick="addTx()" class="w-10 h-10 rounded-xl bg-white/5"><i class="fa-solid fa-plus"></i></button></div><div id="categories" class="space-y-3 mt-5"></div></div>
-  <div class="lg:col-span-2 glass rounded-3xl p-6"><div class="flex justify-between"><div><p class="text-xs uppercase tracking-[.2em] text-zinc-600">Activity</p><h2 class="text-xl font-bold mt-1">Transactions</h2></div><button onclick="clearTx()" class="text-[10px] text-zinc-600 hover:text-red-400">Clear</button></div><div id="txs" class="space-y-2 mt-5 max-h-[450px] overflow-auto"></div></div>
+ <section class="app-view hidden glass rounded-3xl p-5 sm:p-6" data-view="ai" hidden>
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div><p class="text-xs uppercase tracking-[.18em] text-purple-300">AI MONEY COACH</p><h1 class="text-2xl font-bold mt-1">Roast & Toast</h1></div><div class="grid grid-cols-2 gap-2"><button onclick="coach('toast')" class="py-2.5 px-4 rounded-xl bg-lime-400/10 text-lime-300 text-xs font-bold">Toast</button><button onclick="coach('roast')" class="py-2.5 px-4 rounded-xl bg-red-400/10 text-red-300 text-xs font-bold">Roast</button></div></div>
+  <div id="coach" class="mt-5 p-4 rounded-2xl border border-purple-400/10 bg-purple-400/5 text-sm leading-6 text-zinc-300"></div>
  </section>
 
- <section class="mt-4"><div class="flex justify-between mb-4"><div><p class="text-xs uppercase tracking-[.2em] text-zinc-600">Secure the bag</p><h2 class="text-xl font-bold mt-1">Goal Stash 🎯</h2></div><button onclick="newGoal()" class="text-xs text-purple-400 font-bold">+ New goal</button></div><div id="goals" class="grid md:grid-cols-3 gap-4"></div></section>
+ <section class="app-view hidden grid lg:grid-cols-5 gap-4" data-view="expenses" hidden>
+  <div class="lg:col-span-3 glass rounded-3xl p-6"><div class="flex justify-between items-center gap-4"><div><p class="text-xs uppercase tracking-[.2em] text-zinc-600">Analytics</p><h2 class="text-xl font-bold mt-1">Where your money went</h2></div><button onclick="addTx()" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-500 text-xs font-black"><i class="fa-solid fa-plus"></i>Add Expense</button></div><div id="categories" class="space-y-3 mt-5"></div></div>
+  <div class="lg:col-span-2 glass rounded-3xl p-6"><div class="flex justify-between"><div><p class="text-xs uppercase tracking-[.2em] text-zinc-600">Activity</p><h2 class="text-xl font-bold mt-1">Transactions</h2></div><div class="flex gap-3"><button id="clearImportedButton" onclick="clearImportedTx()" class="hidden text-[10px] text-amber-300 hover:text-amber-200">Remove imported</button><button onclick="clearTx()" class="text-[10px] text-zinc-600 hover:text-red-400">Clear</button></div></div><div id="txs" class="space-y-2 mt-5 max-h-[450px] overflow-auto"></div></div>
+ </section>
 
- <section class="mt-4 glass rounded-3xl p-6"><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-5"><div><p class="text-xs uppercase tracking-[.2em] text-red-400/70">Vice Vault</p><h2 class="text-xl font-black text-red-300 mt-1">Lockdown Mode</h2><p class="text-xs text-zinc-600 mt-1">A visual commitment mode for impulse spending.</p></div><button id="lock" onclick="toggleLock()" class="px-6 py-3.5 rounded-2xl border border-red-500/30 bg-red-500/10 text-red-300 font-black text-xs"><i class="fa-solid fa-lock mr-2"></i>Activate Lockdown</button></div></section>
+ <section class="app-view hidden mt-4 glass rounded-3xl p-5 sm:p-6" data-view="more" hidden>
+  <div class="flex justify-between items-center"><div><p class="text-xs uppercase tracking-[.2em] text-zinc-600">Live spend</p><h2 class="text-xl font-bold mt-1">Daily money pulse</h2></div></div>
+  <div id="dailyPulse" class="mt-4 grid md:grid-cols-3 gap-4"></div>
+ </section>
+
+ <section class="app-view hidden mt-4 glass rounded-3xl p-5 sm:p-6" data-view="more" hidden>
+  <div class="flex justify-between items-center gap-4"><div><p class="text-xs uppercase tracking-[.2em] text-zinc-600">Spend with intention</p><h2 class="text-xl font-bold mt-1">Daily limit & weekly win</h2></div><button onclick="settings()" class="text-xs text-purple-300 font-bold">Set limit</button></div>
+  <div id="dailyLimitPanel" class="mt-4"></div>
+ </section>
+
+ <section id="aiInsightsSection" class="app-view hidden mt-4 glass rounded-3xl p-5 sm:p-6" data-view="ai" hidden>
+  <div class="flex justify-between items-center"><div><p class="text-xs uppercase tracking-[.2em] text-zinc-600">AI insights dashboard</p><h2 class="text-xl font-bold mt-1">Your money story</h2></div><button onclick="coach('toast')" class="text-xs text-purple-400 font-bold">Refresh insight</button></div>
+  <div id="aiInsights" class="grid md:grid-cols-2 xl:grid-cols-4 gap-4 mt-4"></div>
+ </section>
+
+ <section class="app-view hidden mt-4 glass rounded-3xl p-5 sm:p-6" data-view="goals" hidden><div class="flex justify-between items-center mb-5"><div><p class="text-xs uppercase tracking-[.18em] text-zinc-500">SAVE FOR WHAT MATTERS</p><h1 class="text-2xl font-bold mt-1">Goal Stash 🎯</h1></div><div class="flex items-center gap-2"><button id="undoButton" onclick="undoLast()" class="text-xs text-zinc-300 border border-white/10 rounded-xl px-3 py-2 disabled:opacity-40 disabled:cursor-not-allowed">Undo</button><button onclick="newGoal()" class="text-xs text-purple-300 font-bold">+ New goal</button></div></div><div id="goals" class="grid md:grid-cols-3 gap-4"></div></section>
+
+ <section class="app-view hidden mt-4 glass rounded-3xl p-5 sm:p-6" data-view="split" hidden><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4"><div><p class="text-xs uppercase tracking-[.18em] text-lime-300">FRIENDS & SHARED COSTS</p><h1 class="text-2xl font-bold mt-1">Split Bills</h1><p class="text-sm text-zinc-500 mt-1">Keep group expenses together and see everyone’s share.</p></div><button onclick="newSplit()" class="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-lime-400 text-black text-xs font-black"><i class="fa-solid fa-plus"></i>New group bill</button></div><div id="splitBills" class="mt-5 grid md:grid-cols-2 xl:grid-cols-3 gap-4"></div></section>
+
+ <section class="app-view hidden mt-4 glass rounded-3xl p-5 sm:p-6" data-view="more" hidden><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-5"><div><p class="text-xs uppercase tracking-[.18em] text-red-300">ADVANCED</p><h2 class="text-xl font-bold mt-1">Lockdown Mode</h2><p class="text-xs text-zinc-500 mt-1">A visual commitment mode for impulse spending.</p></div><button id="lock" onclick="toggleLock()" class="px-5 py-3 rounded-xl border border-red-500/30 bg-red-500/10 text-red-300 font-black text-xs"><i class="fa-solid fa-lock mr-2"></i>Activate Lockdown</button></div></section>
 </main>
+<nav aria-label="Mobile navigation" class="mobile-nav fixed bottom-0 inset-x-0 z-50 md:hidden border-t border-white/10 bg-[#0d0d12]/95 backdrop-blur-xl">
+ <div class="max-w-xl mx-auto grid grid-cols-5 px-2 pt-2">
+  <button class="app-nav-link flex-col gap-1 text-[10px] px-1 py-2" data-nav="dashboard" onclick="showView('dashboard')"><i class="fa-solid fa-house text-base"></i>Home</button>
+  <button class="app-nav-link flex-col gap-1 text-[10px] px-1 py-2" data-nav="expenses" onclick="showView('expenses')"><i class="fa-solid fa-receipt text-base"></i>Expenses</button>
+  <button class="app-nav-link flex-col gap-1 text-[10px] px-1 py-2" data-nav="ai" onclick="showView('ai')"><i class="fa-solid fa-wand-magic-sparkles text-base"></i>Coach</button>
+  <button class="app-nav-link flex-col gap-1 text-[10px] px-1 py-2" data-nav="split" onclick="showView('split')"><i class="fa-solid fa-people-group text-base"></i>Split</button>
+  <button class="app-nav-link flex-col gap-1 text-[10px] px-1 py-2" data-nav="more" onclick="showView('more')"><i class="fa-solid fa-ellipsis text-base"></i>More</button>
+ </div>
+ <button onclick="addTx()" class="fixed right-4 bottom-[88px] h-14 w-14 rounded-full bg-purple-500 text-white shadow-xl shadow-purple-950/50 md:hidden" aria-label="Add expense"><i class="fa-solid fa-plus text-lg"></i></button>
+</nav>
 
 <div id="modal" class="modal fixed inset-0 z-[200] items-center justify-center bg-black/80 p-5">
  <div class="glass rounded-3xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto"><div class="flex justify-between items-center"><h3 id="modalTitle" class="text-xl font-bold">Review</h3><button onclick="closeModal()" class="text-zinc-500"><i class="fa-solid fa-xmark text-xl"></i></button></div><div id="modalBody" class="mt-5"></div></div>
@@ -107,12 +158,17 @@ input,select{font:inherit}input:focus,select:focus{outline:2px solid rgba(155,92
 
 <script>
 let pdfjs=null;
+let importPasswordResolver=null;
+let officeCryptoLoadPromise=null;
 const SKEY="broke_af_universal_v1";
 const CATS={
  food:["Food & Delivery","fa-burger"],subscription:["Subscriptions","fa-repeat"],travel:["Travel & IRCTC","fa-train"],fitness:["Gym & Fitness","fa-dumbbell"],shopping:["Shopping","fa-bag-shopping"],bills:["Bills & Recharge","fa-mobile-screen"],education:["Education","fa-graduation-cap"],transfer:["Transfers","fa-arrow-right-arrow-left"],other:["Other","fa-receipt"]
 };
+const PAYMENT_METHODS=["Cash","UPI","Card","Bank","Other"];
 const sym={INR:"₹",USD:"$",EUR:"€",GBP:"£"};
-let state=JSON.parse(localStorage.getItem(SKEY)||"null")||{name:"",budget:0,currency:"INR",tx:[],goals:[],locked:false};
+let undoStack=[];
+let state={name:"",budget:0,currency:"INR",dailyLimit:0,dailyLimitAlertDate:"",tx:[],goals:[],splitBills:[],locked:false};
+try{const saved=JSON.parse(localStorage.getItem(SKEY)||"null");if(saved){state={...state,...saved,tx:Array.isArray(saved.tx)?saved.tx:[],goals:Array.isArray(saved.goals)?saved.goals:[],splitBills:Array.isArray(saved.splitBills)?saved.splitBills:[]};}}catch(e){console.warn("Unable to parse saved state",e)}
 let pending=[];
 
 (async()=>{try{pdfjs=await import("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs");pdfjs.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs";}catch(e){console.warn("PDF library unavailable",e)}})();
@@ -121,11 +177,59 @@ const $=id=>document.getElementById(id);
 const money=n=>(sym[state.currency]||"₹")+Math.round(Math.max(0,n)).toLocaleString("en-IN");
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
 function save(){localStorage.setItem(SKEY,JSON.stringify(state))}
-function closeModal(){$("modal").classList.remove("show")}
+function rememberState(){
+ const snapshot={name:state.name,budget:state.budget,currency:state.currency,dailyLimit:state.dailyLimit,dailyLimitAlertDate:state.dailyLimitAlertDate,tx:JSON.parse(JSON.stringify(state.tx)),goals:JSON.parse(JSON.stringify(state.goals)),splitBills:JSON.parse(JSON.stringify(state.splitBills)),locked:state.locked};
+ undoStack.push(snapshot);if(undoStack.length>12)undoStack.shift();
+}
+function undoLast(){
+ if(!undoStack.length)return;
+ const snapshot=undoStack.pop();
+ state={...state,...snapshot,tx:Array.isArray(snapshot.tx)?snapshot.tx:[],goals:Array.isArray(snapshot.goals)?snapshot.goals:[],splitBills:Array.isArray(snapshot.splitBills)?snapshot.splitBills:[]};
+ save();render();
+}
+function closeModal(){if(importPasswordResolver){cancelPdfPassword();return;}$("modal").classList.remove("show")}
 function modal(title,body){$("modalTitle").textContent=title;$("modalBody").innerHTML=body;$("modal").classList.add("show")}
-function catOf(s=""){s=s.toLowerCase();if(/zomato|swiggy|food|restaurant|mcdonald|domino|pizza|blinkit|zepto|instamart/.test(s))return"food";if(/spotify|netflix|prime|youtube|subscription|apple music|hotstar/.test(s))return"subscription";if(/irctc|train|metro|uber|ola|rapido|flight|bus|redbus/.test(s))return"travel";if(/gym|protein|cult|fitness|supplement/.test(s))return"fitness";if(/amazon|flipkart|myntra|shopping|mall|ajio/.test(s))return"shopping";if(/recharge|airtel|jio|vodafone|vi |electric|bill|broadband/.test(s))return"bills";if(/college|university|course|exam|book|education|school/.test(s))return"education";if(/upi|transfer|sent to|received from/.test(s))return"transfer";return"other"}
+function showView(name){
+ document.querySelectorAll("[data-view]").forEach(view=>{
+  const active=view.dataset.view===name;
+  view.hidden=!active;
+  view.classList.toggle("hidden",!active);
+ });
+ document.querySelectorAll("[data-nav]").forEach(link=>link.classList.toggle("active",link.dataset.nav===name));
+ window.scrollTo({top:0,behavior:"smooth"});
+}
+function showToast(message){
+ let toast=$("appToast");
+ if(!toast){toast=document.createElement("div");toast.id="appToast";toast.className="fixed top-4 left-1/2 -translate-x-1/2 z-[300] rounded-xl border border-lime-400/20 bg-[#15151a] px-4 py-3 text-sm font-bold text-lime-300 shadow-xl";document.body.appendChild(toast);}
+ toast.textContent=message;toast.classList.remove("hidden");
+ clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>toast.classList.add("hidden"),2200);
+}
+function promptImportPassword(fileType,incorrect=false){
+ return new Promise(resolve=>{
+  importPasswordResolver=resolve;
+  modal(`Unlock ${fileType} statement`,`<form onsubmit="submitImportPassword(event)" class="space-y-4"><p class="text-sm text-zinc-400">${incorrect?"That password didn’t work. Try again.":`This ${fileType} statement is password-protected. Enter its password to continue importing.`}</p><input id="importPassword" type="password" autocomplete="current-password" required autofocus placeholder="Statement password" class="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-sm"><p class="text-[11px] text-zinc-600">The password is used only in this browser and is not saved.</p><div class="flex gap-3"><button type="button" onclick="cancelPdfPassword()" class="flex-1 py-3 rounded-xl bg-white/5 text-zinc-300 text-sm font-bold">Cancel</button><button class="flex-1 py-3 rounded-xl bg-purple-500 text-sm font-bold">Unlock statement</button></div></form>`);
+  setTimeout(()=>$("importPassword")?.focus(),0);
+ });
+}
+function submitImportPassword(event){
+ event.preventDefault();
+ const password=$("importPassword").value;
+ const resolve=importPasswordResolver;
+ importPasswordResolver=null;
+ $("modal").classList.remove("show");
+ resolve?.(password);
+}
+function cancelPdfPassword(){
+ const resolve=importPasswordResolver;
+ importPasswordResolver=null;
+ $("modal").classList.remove("show");
+ resolve?.(null);
+}
+function catOf(s=""){s=s.toLowerCase();if(/zomato|swiggy|food|restaurant|mcdonald|domino|pizza|blinkit|zepto|instamart|momos|burger|cafe|canteen|coffee/.test(s))return"food";if(/spotify|netflix|prime|youtube|subscription|apple music|hotstar/.test(s))return"subscription";if(/irctc|train|metro|uber|ola|rapido|flight|bus|redbus|auto/.test(s))return"travel";if(/gym|protein|cult|fitness|supplement|workout|yoga/.test(s))return"fitness";if(/amazon|flipkart|myntra|shopping|mall|ajio|store/.test(s))return"shopping";if(/recharge|airtel|jio|vodafone|vi |electric|bill|broadband|wifi|water/.test(s))return"bills";if(/college|university|course|exam|book|education|tuition|school|fees/.test(s))return"education";if(/upi|transfer|sent to|received from|bank|neft|imps/.test(s))return"transfer";return"other"}
+function getSuggestedCategory(raw=""){return catOf(raw)}
+function parseNaturalLanguage(text){const input=String(text||"").trim();if(!input)return null;const amountMatch=input.match(/(?:rs\.?|inr|rupees|₹)?\s*(\d+(?:\.\d{1,2})?)/i);if(!amountMatch)return null;const amount=Number(amountMatch[1]);const noAmount=input.replace(amountMatch[0],"").trim();let merchant=(noAmount.replace(/^(spent|paid|bought|had|went|for|on|at)\s+/i,"").replace(/\s+(?:using|via|with|by)\s+.*$/i,"").replace(/\s+(?:for|using|via|with|by)\s*$/i,"").trim());if(!merchant){const fallback=input.match(/(?:on|at|for)\s+(.+)$/i);merchant=fallback?fallback[1].replace(/\s+(?:using|via|with|by)\s+.*$/i,"").trim():"Expense";}const paymentMethod=/upi|gpay|phonepe|paytm|bharatpe/.test(input)?"UPI":/card|visa|mastercard|rupay/.test(input)?"Card":/bank|neft|imps|transfer/.test(input)?"Bank":/cash/.test(input)?"Cash":"Other";const category=getSuggestedCategory(merchant || input);return {amount,merchant:merchant||"Expense",category,paymentMethod,note:input};}
 
-$("setupForm").addEventListener("submit",e=>{e.preventDefault();state.name=$("name").value.trim()||"there";state.budget=+$("budget").value;state.currency=$("currency").value;state.tx=[];state.goals=[{name:"Emergency Stash",target:5000,saved:0,icon:"fa-shield-heart"},{name:"New Gear",target:3000,saved:0,icon:"fa-headphones"}];save();$("setup").style.display="none";render()});
+$("setupForm").addEventListener("submit",e=>{e.preventDefault();state.name=$("name").value.trim()||"there";state.budget=+$("budget").value;state.currency=$("currency").value;state.tx=[];state.goals=[{name:"Emergency Stash",target:5000,saved:0,icon:"fa-shield-heart"},{name:"New Gear",target:3000,saved:0,icon:"fa-headphones"}];state.splitBills=[];save();$("setup").style.display="none";render()});
 if(state.budget)$("setup").style.display="none";
 
 $("file").addEventListener("change",e=>{if(e.target.files[0])handleFile(e.target.files[0])});
@@ -142,8 +246,8 @@ async function handleFile(file){
   let candidates=[];
   if(ext==="csv"||ext==="txt")candidates=parseCSVText(await file.text());
   else if(ext==="json")candidates=parseJSON(await file.text());
-  else if(ext==="xlsx"||ext==="xls")candidates=parseWorkbook(await file.arrayBuffer());
-  else if(ext==="pdf")candidates=await parsePDF(await file.arrayBuffer());
+  else if(ext==="xlsx"||ext==="xls"){candidates=await parseWorkbookWithPassword(await file.arrayBuffer());if(candidates===null)return;}
+  else if(ext==="pdf"){candidates=await parsePDFWithPassword(await file.arrayBuffer());if(candidates===null)return;}
   else if(["png","jpg","jpeg","webp"].includes(ext))candidates=await parseImage(file);
   else throw new Error("Unsupported file type.");
   pending=dedupe(candidates);
@@ -160,44 +264,182 @@ function parseCSVText(text){
 }
 function rowsToTransactions(rows){
  if(!rows.length)return[];
- const h=rows[0].map(x=>String(x).toLowerCase().replace(/[^a-z]/g,""));
- const find=a=>h.findIndex(x=>a.some(n=>x.includes(n)));
- let di=find(["date","transactiondate","valuedate","postingdate"]),mi=find(["merchant","description","narration","details","particular","payee","name"]),ai=find(["amount","debit","withdrawal","spent","transactionamount","value"]),ci=find(["category","type"]);
+ const normalize=value=>String(value??"").toLowerCase().replace(/[^a-z]/g,"");
+ const headerRows=rows.slice(0,Math.min(rows.length,20)).map((row,index)=>{
+  const headers=row.map(normalize);
+  const has=terms=>headers.some(header=>terms.some(term=>header.includes(term)));
+  const score=(has(["transactiondate","postingdate","valuedate","date"])?4:0)
+   +(has(["narration","description","particular","merchant","payee","remarks"])?3:0)
+   +(has(["debit","withdrawal","spent","withdrawn"])?4:0)
+   +(has(["credit","deposit"])?2:0)
+   +(has(["amount"])?2:0)
+   +(has(["balance"])?1:0);
+  return {headers,index,score};
+ }).sort((a,b)=>b.score-a.score);
+ const headerRow=headerRows[0];
+ if(!headerRow||headerRow.score<4)return[];
+ const h=headerRow.headers;
+ const find=(terms,exclude=[])=>h.findIndex(header=>terms.some(term=>header===term||header.includes(term))&&!exclude.some(term=>header.includes(term)));
+ const di=find(["transactiondate","postingdate","valuedate","date"]);
+ const mi=find(["narration","particulars","particular","description","transactiondetails","remarks","merchant","payee","details","name"]);
+ const debitIndex=find(["withdrawalamount","debitamount","withdrawals","withdrawal","debit","spent","withdrawn"]);
+ const creditIndex=find(["depositamount","creditamount","deposits","deposit","credit"]);
+ const balanceIndex=find(["balance","availablebalance","closingbalance"]);
+ const amountIndex=find(["transactionamount","amount"],["debit","credit","balance"]);
+ const typeIndex=find(["transactiontype","drcr","creditdebit","type"]);
+ const categoryIndex=find(["category"]);
+ if(debitIndex<0&&amountIndex<0)return[];
  const out=[];
- for(const r of rows.slice(1)){
-  const merchant=mi>=0?r[mi]:"Transaction";
-  let raw=ai>=0?r[ai]:"";
-  let amount=parseAmount(raw);
-  if(!amount){for(const x of r){const n=parseAmount(x);if(n){amount=n;break}}}
+ for(const r of rows.slice(headerRow.index+1)){
+  const merchant=mi>=0?String(r[mi]??"").trim():"Transaction";
+  let amount=debitIndex>=0?parseDebitAmount(r[debitIndex]):parseAmount(r[amountIndex]);
+  if(debitIndex<0){
+   const direction=String(typeIndex>=0?r[typeIndex]:"").toLowerCase();
+   const description=merchant.toLowerCase();
+   const isCredit=/\b(?:cr|credit|deposit|salary|refund|cashback|interest)\b/.test(`${direction} ${description}`);
+   if(isCredit||(creditIndex>=0&&parseAmount(r[creditIndex])>0))continue;
+   if(!amount&&creditIndex>=0)continue;
+   if(amountIndex>=0&&/^\s*-/.test(String(r[amountIndex]??"")))amount=parseDebitAmount(r[amountIndex]);
+  }
   if(!amount)continue;
-  let date=di>=0?parseDate(r[di]):today();
-  out.push({date,merchant:merchant||"Transaction",amount,cat:ci>=0?catOf(r[ci]):catOf(merchant),confidence:ci>=0?.97:.86});
+  if(balanceIndex>=0&&amountIndex===balanceIndex)continue;
+  const date=di>=0?parseDate(r[di]):today();
+  out.push({date,merchant:merchant||"Transaction",amount,cat:categoryIndex>=0?catOf(r[categoryIndex]):catOf(merchant),confidence:debitIndex>=0?.9:.72});
  }
  return out;
 }
 function parseAmount(v){if(v==null)return 0;let s=String(v).replace(/[₹$€£,\s]/g,"");s=s.replace(/(cr|dr)$/i,"");let n=parseFloat(s);return isFinite(n)&&n>0?n:0}
-function parseDate(v){if(!v)return today();let d=new Date(v);if(isNaN(d)){const m=String(v).match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);if(m)d=new Date(+m[3]<100?2000+(+m[3]):+m[3],+m[2]-1,+m[1])}return isNaN(d)?today():d.toISOString().slice(0,10)}
+function parseDebitAmount(v){if(v==null)return 0;const match=String(v).replace(/[₹$€£,\s]/g,"").match(/-?\d+(?:\.\d{1,2})?/);if(!match)return 0;const amount=Math.abs(Number(match[0]));return Number.isFinite(amount)?amount:0}
+function parseDate(v){if(!v)return today();if(v instanceof Date&&!isNaN(v))return v.toISOString().slice(0,10);if(typeof v==="number"&&v>0)return new Date(Date.UTC(1899,11,30)+v*86400000).toISOString().slice(0,10);const s=String(v).trim();const iso=s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);if(iso)return`${iso[1]}-${String(iso[2]).padStart(2,"0")}-${String(iso[3]).padStart(2,"0")}`;const local=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);if(local){let day=+local[1],month=+local[2],year=+local[3];if(day<=12&&month>12)[day,month]=[month,day];if(year<100)year+=year<50?2000:1900;const d=new Date(Date.UTC(year,month-1,day));return d.getUTCFullYear()===year&&d.getUTCMonth()===month-1&&d.getUTCDate()===day?d.toISOString().slice(0,10):today()}const d=new Date(s);return isNaN(d)?today():d.toISOString().slice(0,10)}
 function today(){return new Date().toISOString().slice(0,10)}
 function parseJSON(text){let j=JSON.parse(text);if(!Array.isArray(j))j=j.transactions||j.data||j.records||[];return j.map(x=>({date:parseDate(x.date||x.transactionDate||x.valueDate),merchant:x.merchant||x.description||x.narration||x.name||"Transaction",amount:parseAmount(x.amount||x.debit||x.withdrawal||x.spent),cat:catOf(x.category||x.description||x.merchant),confidence:.9})).filter(x=>x.amount)}
 function parseWorkbook(buf){const wb=XLSX.read(buf,{type:"array",cellDates:true});let best=[];for(const name of wb.SheetNames){const rows=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,defval:""});const tx=rowsToTransactions(rows);if(tx.length>best.length)best=tx}return best}
-async function parsePDF(buf){
+function loadOfficeCrypto(){
+ if(window.officeCrypto?.decrypt)return Promise.resolve(window.officeCrypto);
+ if(!officeCryptoLoadPromise){
+  officeCryptoLoadPromise=new Promise((resolve,reject)=>{
+   const script=document.createElement("script");
+   script.src="https://cdn.jsdelivr.net/gh/core-K2/officecrypto-build@74eec9609bc5db01d14c5a9d6fbeb666832b3412/dist/officecrypto.min.js";
+   script.onload=()=>window.officeCrypto?.decrypt?resolve(window.officeCrypto):reject(new Error("Could not initialize the Excel password reader."));
+   script.onerror=()=>reject(new Error("Could not load the Excel password reader. Check your internet connection, then try again."));
+   document.head.appendChild(script);
+  }).catch(error=>{officeCryptoLoadPromise=null;throw error;});
+ }
+ return officeCryptoLoadPromise;
+}
+function isPasswordError(error){return /password/i.test(`${error?.name||""} ${error?.message||""}`)}
+async function parseWorkbookWithPassword(buf){
+ try{return parseWorkbook(buf);}
+ catch(error){if(!isPasswordError(error))throw error;}
+ const officeCrypto=await loadOfficeCrypto();
+ let incorrect=false;
+ while(true){
+  const password=await promptImportPassword("Excel",incorrect);
+  if(password===null)return null;
+  try{
+   const decrypted=await officeCrypto.decrypt(new Uint8Array(buf.slice(0)),{password});
+   return parseWorkbook(decrypted);
+  }catch(error){
+   if(!isPasswordError(error))throw error;
+   incorrect=true;
+  }
+ }
+}
+async function parsePDF(buf,password){
  if(!pdfjs)throw new Error("PDF engine is still loading. Try again in a few seconds.");
- const pdf=await pdfjs.getDocument({data:buf}).promise;let all=[];
- for(let p=1;p<=pdf.numPages;p++){const page=await pdf.getPage(p);const content=await page.getTextContent();const items=content.items.map(x=>({s:x.str,x:x.transform[4],y:x.transform[5]}));const lines={};items.forEach(it=>{const k=Math.round(it.y/3)*3;(lines[k]??=[]).push(it)});const text=Object.values(lines).sort((a,b)=>b[0].y-a[0].y).map(a=>a.sort((x,y)=>x.x-y.x).map(x=>x.s).join(" "));all.push(...parseStatementLines(text))}
+ const pdf=await pdfjs.getDocument({data:new Uint8Array(buf.slice(0)),...(password===undefined?{}:{password})}).promise;let all=[];
+ for(let p=1;p<=pdf.numPages;p++){
+  const page=await pdf.getPage(p);const content=await page.getTextContent();
+  const parsed=parsePDFTableItems(content.items);
+  if(parsed.recognized)all.push(...parsed.transactions);
+  else{
+   const items=content.items.map(x=>({s:x.str,x:x.transform[4],y:x.transform[5]}));const lines={};items.forEach(it=>{const k=Math.round(it.y/3)*3;(lines[k]??=[]).push(it)});const text=Object.values(lines).sort((a,b)=>b[0].y-a[0].y).map(a=>a.sort((x,y)=>x.x-y.x).map(x=>x.s).join(" "));all.push(...parseStatementLines(text));
+  }
+ }
  return all;
+}
+function parsePDFTableItems(items){
+ const lines=[];
+ for(const item of items){
+  if(typeof item.str!=="string"||!item.str.trim())continue;
+  const y=Number(item.transform?.[5]);const x=Number(item.transform?.[4]);
+  if(!Number.isFinite(x)||!Number.isFinite(y))continue;
+  let line=lines.find(candidate=>Math.abs(candidate.y-y)<=2);
+  if(!line){line={y,items:[]};lines.push(line);}
+  line.items.push({text:item.str.trim(),x});
+ }
+ lines.sort((a,b)=>b.y-a.y);
+ let anchors=null;let headerY=null;
+ for(const line of lines){
+  const headings={
+   date:line.items.find(i=>/^(value\s*date|transaction\s*date|trans\s*date|date)$/i.test(i.text)),
+   postDate:line.items.find(i=>/^post\s*date$/i.test(i.text)),
+   details:line.items.find(i=>/^(details|narration|description|particulars?)$/i.test(i.text)),
+   reference:line.items.find(i=>/^(ref(?:erence)?\s*(?:no|number)|cheque\s*no)/i.test(i.text)),
+   debit:line.items.find(i=>/debit/i.test(i.text)),
+   credit:line.items.find(i=>/credit/i.test(i.text)),
+   balance:line.items.find(i=>/balance/i.test(i.text))
+  };
+  if(headings.date&&headings.details&&headings.debit&&headings.credit&&headings.balance){
+   anchors=Object.entries(headings).filter(([,item])=>item).map(([name,item])=>({name,x:item.x})).sort((a,b)=>a.x-b.x);
+   headerY=line.y;
+   break;
+  }
+ }
+ if(!anchors)return{recognized:false,transactions:[]};
+ const bounds=anchors.map((anchor,index)=>({
+  ...anchor,
+  left:index===0?-Infinity:(anchors[index-1].x+anchor.x)/2,
+  right:index===anchors.length-1?Infinity:(anchor.x+anchors[index+1].x)/2
+ }));
+ const cellFor=(rowItems,name)=>rowItems.filter(item=>{
+  const column=bounds.find(bound=>bound.name===name);
+  return item.x>=column.left&&item.x<column.right;
+ }).sort((a,b)=>a.x-b.x).map(item=>item.text).join(" ").trim();
+ const dateColumn=bounds.find(bound=>bound.name==="date");
+ const dateEntries=lines.flatMap(line=>line.items.filter(item=>item.x>=dateColumn.left&&item.x<dateColumn.right).map(item=>({y:line.y,date:item.text.match(/\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}/)?.[0]})).filter(entry=>entry.date&&line.y<headerY)).sort((a,b)=>b.y-a.y);
+ const allItems=lines.flatMap(line=>line.items.map(item=>({...item,y:line.y})));
+ const transactions=dateEntries.map((entry,index)=>{
+  const previous=dateEntries[index-1];const next=dateEntries[index+1];
+  const upper=previous?(previous.y+entry.y)/2:headerY;
+  const lower=next?(entry.y+next.y)/2:-Infinity;
+  const rowItems=allItems.filter(item=>item.y<=upper&&item.y>lower);
+  const debit=parseDebitAmount(cellFor(rowItems,"debit"));
+  const credit=parseAmount(cellFor(rowItems,"credit"));
+  const details=cellFor(rowItems,"details").replace(/\s+/g," ").trim();
+  if(debit<=0||credit>0||!/[a-z]{2}/i.test(details))return null;
+  return{date:parseDate(entry.date),merchant:details,amount:debit,cat:catOf(details),confidence:.96};
+ }).filter(Boolean);
+ return{recognized:true,transactions:transactions.filter(item=>/[a-z]{2}/i.test(item.merchant))};
+}
+async function parsePDFWithPassword(buf){
+ let password;
+ while(true){
+  try{return await parsePDF(buf,password);}
+  catch(error){
+   if(error?.name!=="PasswordException")throw error;
+   password=await promptImportPassword("PDF",error.code===2);
+   if(password===null)return null;
+  }
+ }
 }
 function parseStatementLines(lines){
  const out=[];
- const dateRe=/\b(\d{1,2}[\/\-.](?:\d{1,2}|[A-Za-z]{3,9})[\/\-.]\d{2,4})\b/;
- const amountRe=/((?:₹|Rs\.?|INR)?\s*\d{1,3}(?:,\d{3})*(?:\.\d{1,2})|\d+(?:\.\d{1,2}))/gi;
+ const dateRe=/\b(\d{1,2}[\/\-.](?:\d{1,2}|[A-Za-z]{3,9})[\/\-.]\d{2,4})\b/g;
+ const amountRe=/((?:₹|Rs\.?|INR)?\s*\d+(?:,\d{3})*(?:\.\d{1,2})?)/gi;
  for(const line of lines){
-  const dm=line.match(dateRe);if(!dm)continue;
-  const nums=[...(line.matchAll(amountRe))].map(m=>parseAmount(m[1])).filter(Boolean);if(!nums.length)continue;
-  const amount=nums[nums.length-1];
-  let merchant=line.replace(dm[0],"").replace(amountRe," ").replace(/\s+/g," ").trim();
+  const dates=[...line.matchAll(dateRe)];if(!dates.length)continue;
+  const dateText=dates[0][1];
+  const withoutDates=line.replace(dateRe," ");
+  const credits=/(?:^|[\s/])(?:cr|credit|deposit|salary|refund|cashback|interest)(?:$|[\s/])/i.test(withoutDates);
+  if(credits)continue;
+  const amounts=[...withoutDates.matchAll(amountRe)].map(match=>({text:match[1],index:match.index,amount:parseAmount(match[1])})).filter(item=>item.amount&&item.amount<1000000000);
+  if(!amounts.length)continue;
+  const amount=amounts.length>1?amounts[amounts.length-2].amount:amounts[0].amount;
+  let merchant=withoutDates.replace(amountRe," ").replace(/\s*\/\s*/g,"/").replace(/\/{2,}/g,"/").replace(/\s+/g," ").replace(/^[\s|,:;/-]+|[\s|,:;/-]+$/g,"").trim();
   merchant=merchant.replace(/^(debit|credit|dr|cr|withdrawal|deposit)\s+/i,"").trim();
-  if(!merchant||merchant.length<2)merchant="Statement transaction";
-  out.push({date:parseDate(dm[1]),merchant,amount,cat:catOf(merchant),confidence:.68});
+  if(!/[a-z]{2}/i.test(merchant)||/^(?:opening|closing)?\s*balance$/i.test(merchant))continue;
+  out.push({date:parseDate(dateText),merchant,amount,cat:catOf(merchant),confidence:amounts.length>1?.6:.68});
  }
  return out;
 }
@@ -218,37 +460,184 @@ function showReview(filename,items){
  <td class="p-3 text-[10px] ${x.confidence>.85?"text-lime-300":"text-yellow-300"}">${Math.round(x.confidence*100)}%</td>
  </tr>`).join("");
  modal("Review imported transactions",`
- <div class="p-4 rounded-2xl bg-purple-500/5 border border-purple-400/10 mb-4"><p class="text-xs text-zinc-400"><b class="text-white">${items.length}</b> transaction candidates found in <b class="text-white">${esc(filename)}</b>. Review them before they affect your dashboard.</p></div>
+ <div class="p-4 rounded-2xl bg-purple-500/5 border border-purple-400/10 mb-4"><p class="text-xs text-zinc-400"><b class="text-white">${items.length}</b> spending candidates totaling <b class="text-white">${money(items.reduce((sum,item)=>sum+Number(item.amount||0),0))}</b> found in <b class="text-white">${esc(filename)}</b>. Credits and balance-only rows are excluded where the statement identifies them. Review every amount before importing.</p></div>
  <div class="overflow-auto max-h-[52vh] border border-white/5 rounded-2xl"><table class="w-full text-left min-w-[760px]"><thead class="sticky top-0 bg-[#111116]"><tr class="text-[10px] uppercase tracking-wider text-zinc-600"><th class="p-3">Date</th><th class="p-3">Merchant</th><th class="p-3">Amount</th><th class="p-3">Category</th><th class="p-3">Confidence</th></tr></thead><tbody>${rows}</tbody></table></div>
  <div class="flex flex-col sm:flex-row justify-between gap-3 mt-5"><button onclick="closeModal()" class="px-5 py-3 rounded-xl bg-white/5 text-zinc-400 text-xs font-bold">Cancel</button><button onclick="confirmImport()" class="px-5 py-3 rounded-xl bg-purple-500 text-white text-xs font-black">Import ${items.length} transactions <i class="fa-solid fa-check ml-2"></i></button></div>`);
 }
 function confirmImport(){
+ rememberState();
  document.querySelectorAll(".review").forEach(el=>{const i=+el.dataset.i;pending[i][el.dataset.k]=el.dataset.k==="amount"?+el.value:el.value});
  pending=pending.filter(x=>x.amount>0&&x.merchant.trim());
- state.tx.push(...pending.map(x=>({id:crypto.randomUUID(),...x})));save();pending=[];closeModal();render();status("Import complete. Dashboard updated.");
+ state.tx.push(...pending.map(x=>({id:crypto.randomUUID(),...x})));save();pending=[];closeModal();render();showToast("Statement imported ✓");status("Import complete. Dashboard updated.");
 }
 
-function addTx(){modal("Add transaction",`<form onsubmit="manualTx(event)" class="space-y-4"><input id="m" required placeholder="Merchant / description" class="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-sm"><div class="grid grid-cols-2 gap-3"><input id="a" required type="number" min=".01" step=".01" placeholder="Amount" class="bg-black/30 border border-white/10 rounded-xl p-3 text-sm"><input id="d" required type="date" value="${today()}" class="bg-black/30 border border-white/10 rounded-xl p-3 text-sm"></div><select id="c" class="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-sm">${Object.entries(CATS).map(([k,v])=>`<option value="${k}">${v[0]}</option>`).join("")}</select><button class="w-full py-3 rounded-xl bg-purple-500 font-bold">Add transaction</button></form>`)}
-function manualTx(e){e.preventDefault();state.tx.push({id:crypto.randomUUID(),merchant:$("m").value,amount:+$("a").value,date:$("d").value,cat:$("c").value,confidence:1});save();closeModal();render()}
-function newGoal(){modal("New goal",`<form onsubmit="goal(event)" class="space-y-4"><input id="gn" required placeholder="Goal name" class="w-full bg-black/30 border border-white/10 rounded-xl p-3"><input id="gt" required type="number" min="1" placeholder="Target amount" class="w-full bg-black/30 border border-white/10 rounded-xl p-3"><button class="w-full py-3 rounded-xl bg-lime-400 text-black font-black">Create goal</button></form>`)}
-function goal(e){e.preventDefault();state.goals.push({name:$("gn").value,target:+$("gt").value,saved:0,icon:"fa-bullseye"});save();closeModal();render()}
-function settings(){modal("Settings",`<form onsubmit="saveSettings(event)" class="space-y-4"><input id="sn" value="${esc(state.name)}" class="w-full bg-black/30 border border-white/10 rounded-xl p-3"><input id="sb" type="number" min="1" value="${state.budget}" class="w-full bg-black/30 border border-white/10 rounded-xl p-3"><select id="sc" class="w-full bg-black/30 border border-white/10 rounded-xl p-3">${Object.keys(sym).map(k=>`<option ${state.currency===k?"selected":""}>${k}</option>`).join("")}</select><button class="w-full py-3 rounded-xl bg-purple-500 font-bold">Save</button><button type="button" onclick="localStorage.removeItem(SKEY);location.reload()" class="w-full py-3 rounded-xl bg-red-500/10 text-red-300 text-xs">Reset app</button></form>`)}
-function saveSettings(e){e.preventDefault();state.name=$("sn").value||"there";state.budget=+$("sb").value;state.currency=$("sc").value;save();closeModal();render()}
-function toggleLock(){state.locked=!state.locked;save();render()}
-function clearTx(){if(confirm("Delete every transaction from this browser?")){state.tx=[];save();render()}}
-function coach(type){const spent=state.tx.reduce((s,t)=>s+t.amount,0);const food=state.tx.filter(t=>t.cat==="food").reduce((s,t)=>s+t.amount,0);const msgs=type==="toast"?[`You tracked ${state.tx.length} real transactions. That's already better than guessing.`,`You still have ${money(Math.max(0,state.budget-spent))}. Financial character development.`,`Data first, judgement later. We're actually cooking now.`]:[`Bro, ${money(spent)} has already left the budget.`,`Food is ${money(food)}. The kitchen would like a word.`,"Your wallet has evidence. I am simply presenting the evidence."];$("coach").textContent=msgs[Math.floor(Math.random()*msgs.length)]}
+function addTx(){
+ modal("Add expense",`<form onsubmit="manualTx(event)" class="space-y-4">
+  <label class="block text-xs font-bold text-zinc-400">Amount<input id="a" required type="number" min=".01" step=".01" placeholder="₹ 120" class="mt-2 w-full bg-black/30 border border-white/10 rounded-xl p-3 text-lg font-bold"></label>
+  <label class="block text-xs font-bold text-zinc-400">What did you spend on?<input id="m" required placeholder="Momos" class="mt-2 w-full bg-black/30 border border-white/10 rounded-xl p-3 text-sm"></label>
+  <div class="grid grid-cols-2 gap-3"><label class="block text-xs font-bold text-zinc-400">Category<select id="c" class="mt-2 w-full bg-black/30 border border-white/10 rounded-xl p-3 text-sm">${Object.entries(CATS).map(([k,v])=>`<option value="${k}">${v[0]}</option>`).join("")}</select></label><label class="block text-xs font-bold text-zinc-400">Payment<select id="pm" class="mt-2 w-full bg-black/30 border border-white/10 rounded-xl p-3 text-sm">${PAYMENT_METHODS.map(v=>`<option value="${v}">${v}</option>`).join("")}</select></label></div>
+  <details class="rounded-xl border border-white/5 p-3"><summary class="cursor-pointer text-xs font-bold text-zinc-400">More details</summary><div class="space-y-3 mt-3"><textarea id="nl" rows="2" placeholder="Or describe it: Spent 180 on Uber using UPI" class="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-sm"></textarea><div class="grid grid-cols-2 gap-3"><input id="d" required type="date" value="${today()}" aria-label="Date" class="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-sm"><input id="t" type="time" value="${new Date().toTimeString().slice(0,5)}" aria-label="Time" class="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-sm"></div><textarea id="note" rows="2" placeholder="Optional note" class="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-sm"></textarea></div></details>
+  <button class="w-full py-3 rounded-xl bg-purple-500 font-bold">Add expense</button>
+ </form>`);
+ setTimeout(()=>{const merchant=$("m");const category=$("c");if(merchant&&category){merchant.addEventListener("input",()=>{const suggestion=getSuggestedCategory(merchant.value);if(suggestion&&CATS[suggestion])category.value=suggestion;});}},0);
+}
+function manualTx(e){e.preventDefault();const naturalText=$("nl")?.value?.trim();const parsed=naturalText?parseNaturalLanguage(naturalText):null;const merchant=(parsed?parsed.merchant:$("m").value).trim()||"Expense";const amount=parsed?parsed.amount:+$("a").value;const date=$("d").value||today();const time=$("t").value||"12:00";const cat=(parsed?parsed.category:$("c").value)||"other";const paymentMethod=(parsed?parsed.paymentMethod:$("pm").value)||"Other";const note=$("note").value.trim();if(!merchant||!amount||amount<=0)return;rememberState();state.tx.push({id:crypto.randomUUID(),merchant,amount:Number(amount),date,cat,paymentMethod,time,note,confidence:1});save();closeModal();render();showToast("Expense added ✓");}
+function newGoal(){modal("New goal",`<form onsubmit="goal(event)" class="space-y-4"><input id="gn" required placeholder="Goal name" class="w-full bg-black/30 border border-white/10 rounded-xl p-3"><input id="gt" required type="number" min="1" placeholder="Target amount" class="w-full bg-black/30 border border-white/10 rounded-xl p-3"><button class="w-full py-3 rounded-xl bg-lime-400 text-black font-black">Create goal</button></form>`) }
+function goal(e){e.preventDefault();rememberState();state.goals.push({name:$("gn").value,target:+$("gt").value,saved:0,icon:"fa-bullseye"});save();closeModal();render()}
+function settings(){modal("Settings",`<form onsubmit="saveSettings(event)" class="space-y-4"><input id="sn" value="${esc(state.name)}" placeholder="Your name" class="w-full bg-black/30 border border-white/10 rounded-xl p-3"><input id="sb" type="number" min="1" value="${state.budget}" placeholder="Monthly budget" class="w-full bg-black/30 border border-white/10 rounded-xl p-3"><label class="block text-xs text-zinc-400">Daily spending limit <span class="text-zinc-600">(0 turns off the reminder)</span></label><input id="sdl" type="number" min="0" step=".01" value="${Number(state.dailyLimit)||0}" class="w-full bg-black/30 border border-white/10 rounded-xl p-3"><select id="sc" class="w-full bg-black/30 border border-white/10 rounded-xl p-3">${Object.keys(sym).map(k=>`<option ${state.currency===k?"selected":""}>${k}</option>`).join("")}</select><button class="w-full py-3 rounded-xl bg-purple-500 font-bold">Save</button><button type="button" onclick="localStorage.removeItem(SKEY);location.reload()" class="w-full py-3 rounded-xl bg-red-500/10 text-red-300 text-xs">Reset app</button></form>`) }
+function saveSettings(e){e.preventDefault();const dailyLimit=Number($("sdl").value);if(!Number.isFinite(dailyLimit)||dailyLimit<0){$("sdl").focus();return;}rememberState();state.name=$("sn").value||"there";state.budget=+$("sb").value;state.currency=$("sc").value;state.dailyLimit=dailyLimit;save();closeModal();render()}
+function toggleLock(){rememberState();state.locked=!state.locked;save();render()}
+function clearTx(){if(confirm("Delete every transaction from this browser?")){rememberState();state.tx=[];save();render()}}
+function clearImportedTx(){const imported=state.tx.filter(t=>Number(t.confidence)<1).length;if(!imported)return;if(confirm(`Remove ${imported} imported transaction${imported===1?"":"s"}? Manually added expenses will stay. You can use Undo to restore them.`)){rememberState();state.tx=state.tx.filter(t=>Number(t.confidence)>=1);save();render()}}
+
+function getSummary(){
+ const tx=[...state.tx].filter(item=>Number(item.amount)>0);
+ const total=tx.reduce((sum,item)=>sum+Number(item.amount),0);
+ const totals={};tx.forEach(item=>{const key=item.cat||"other";totals[key]=(totals[key]||0)+Number(item.amount)});
+ const largestCategory=Object.entries(totals).sort((a,b)=>b[1]-a[1])[0]||["other",0];
+ const largestTx=[...tx].sort((a,b)=>Number(b.amount)-Number(a.amount))[0]||null;
+ const avgDaily=tx.length?total/(new Set(tx.map(item=>item.date)).size||1):0;
+ const weekMs=7*24*60*60*1000;const now=Date.now();
+ const weekTx=tx.filter(item=>Math.abs(now-new Date(`${item.date}T12:00:00`).getTime())<=weekMs);
+ const prevWeekTx=tx.filter(item=>{const ts=new Date(`${item.date}T12:00:00`).getTime();return ts < (now-weekMs) && ts >= (now-(14*24*60*60*1000));});
+ const weekTotal=weekTx.reduce((sum,item)=>sum+Number(item.amount),0);
+ const prevWeekTotal=prevWeekTx.reduce((sum,item)=>sum+Number(item.amount),0);
+ const trend=prevWeekTotal>0?((weekTotal-prevWeekTotal)/prevWeekTotal)*100:null;
+ const monthlyTotal=tx.filter(item=>{const ts=new Date(`${item.date}T12:00:00`).getTime();return now-ts <= 30*24*60*60*1000;}).reduce((sum,item)=>sum+Number(item.amount),0);
+ return {tx,total,totals,largestCategory,largestTx,avgDaily,weekTotal,prevWeekTotal,trend,monthlyTotal};
+}
+function buildCoachMessage(type="toast"){
+ const summary=getSummary();const tx=summary.tx;if(!tx.length)return "Add a few real expenses and I’ll turn them into actual spending insights.";
+ const largestLabel=CATS[summary.largestCategory[0]]?.[0]||"Other";const biggestCatAmount=summary.largestCategory[1]||0;const totalPct=summary.total>0?((biggestCatAmount/summary.total)*100):0;const budgetPct=state.budget>0?((summary.total/state.budget)*100):null;const remaining=Math.max(state.budget-summary.total,0);
+ const merchantMap=tx.reduce((acc,item)=>{const key=item.merchant||"Expense";acc[key]=(acc[key]||0)+Number(item.amount);return acc;},{});
+ const mostExpensive=Object.entries(merchantMap).sort((a,b)=>b[1]-a[1])[0];const mostSpentLabel=mostExpensive?mostExpensive[0]:"your spending";const mostSpentAmount=mostExpensive?mostExpensive[1]:0;
+ if(type==="roast"){
+  const harsh=[];if(state.budget&&budgetPct!==null){harsh.push(`You’ve used ${budgetPct.toFixed(0)}% of your ${money(state.budget)} budget.`);} if(summary.largestCategory[1]){harsh.push(`${largestLabel} is your biggest category at ${money(biggestCatAmount)}.`);} if(summary.avgDaily){harsh.push(`Your average spend is ${money(summary.avgDaily)} a day, which is a strong signal for a tighter run rate.`);} if(remaining>0&&state.budget){harsh.push(`You still have ${money(remaining)} left before the month closes.`);} return harsh.join(" ");
+ }
+ const sentences=[];
+ if(state.budget&&budgetPct!==null){sentences.push(`You’ve spent ${money(summary.total)} this month, which is ${budgetPct.toFixed(0)}% of your ${money(state.budget)} budget.`);} else {sentences.push(`You’ve logged ${money(summary.total)} across ${tx.length} real transactions.`);}
+ if(summary.largestCategory[1]){sentences.push(`${largestLabel} is your biggest category at ${money(biggestCatAmount)}, about ${totalPct.toFixed(0)}% of your spending.`);}
+ if(mostSpentAmount){sentences.push(`The heaviest merchant is ${mostSpentLabel} at ${money(mostSpentAmount)}.`);}
+ if(summary.trend!==null){sentences.push(`Compared with last week, your spending is ${Math.abs(summary.trend).toFixed(1)}% ${summary.trend>=0?"higher":"lower"}.`);}
+ if(summary.avgDaily){sentences.push(`Your average daily spend is ${money(summary.avgDaily)}.`);}
+ if(state.budget&&remaining>0){const daysLeft=Math.max(1,Math.ceil((state.budget-summary.total)/(summary.avgDaily||1)));const dailyCap=(state.budget-summary.total)/daysLeft;sentences.push(`With ${money(remaining)} left and ${daysLeft} days left, your current daily cap is ${money(dailyCap)}.`);}
+ return sentences.join(" ");
+}
+function coach(type){const msg=buildCoachMessage(type);$("coach").textContent=msg;}
+function renderInsights(){
+ const summary=getSummary();const cards=[];
+ if(summary.largestCategory[1]){cards.push({title:"Your biggest expense",value:`${CATS[summary.largestCategory[0]]?.[0]||"Other"} — ${money(summary.largestCategory[1])}`,meta:"Top category"});}
+ if(summary.trend!==null){cards.push({title:"Spending trend",value:`${summary.trend>=0?"↑":"↓"} ${Math.abs(summary.trend).toFixed(1)}% compared with last week`,meta:summary.trend>=0?"Up from prior week":"Down from prior week"});}
+ if(state.budget&&summary.total>0){const remaining=state.budget-summary.total;const dailyAllowance=remaining>0?remaining/Math.max(1,30):0;cards.push({title:"Potential saving",value:`${money(Math.max(0, summary.largestCategory[1]*0.15 || 0))}/month`,meta:dailyAllowance>0?`Daily allowance ${money(dailyAllowance)}`:"Budget check in"});}
+ if(summary.tx.length){cards.push({title:"AI observation",value:buildCoachMessage("toast").slice(0,120)+(buildCoachMessage("toast").length>120?"…":""),meta:"Based on your actual data"});}
+ const container=$("aiInsights");if(!container)return;if(!cards.length){container.innerHTML='<div class="md:col-span-2 xl:col-span-4 rounded-2xl border border-dashed border-white/10 p-6 text-sm text-zinc-500">Not enough data yet. Add a few real expenses to unlock predictive insights.</div>';return;}container.innerHTML=cards.map(card=>`<div class="rounded-2xl border border-white/10 bg-black/20 p-4"><p class="text-[10px] uppercase tracking-[.2em] text-zinc-600">${card.title}</p><h3 class="mt-3 text-xl font-black">${card.value}</h3><p class="mt-2 text-[11px] text-zinc-500">${card.meta}</p></div>`).join("");
+}
+function newSplit(){modal("New group bill",`<form onsubmit="createSplit(event)" class="space-y-4"><input id="splitName" required placeholder="Dinner / Rent / Movie night" class="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-sm"><div class="grid grid-cols-2 gap-3"><input id="splitTotal" required type="number" min="1" step=".01" placeholder="Total amount" class="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-sm"><input id="splitPaidBy" value="${esc(state.name||"You")}" placeholder="Paid by" class="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-sm"></div><input id="splitFriends" placeholder="Friends, separated by commas" class="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-sm"><select id="splitMethod" class="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-sm"><option value="equal">Equal split</option><option value="custom">Custom shares</option></select><button class="w-full py-3 rounded-xl bg-lime-400 text-black font-black">Save bill</button></form>`) }
+function createSplit(e){e.preventDefault();const title=$("splitName").value.trim()||"New split";const total=Number($("splitTotal").value||0);const paidBy=$("splitPaidBy").value.trim()||state.name||"You";const rawFriends=$("splitFriends").value.split(",").map(v=>v.trim()).filter(Boolean);const members=[state.name||"You", ...rawFriends].filter((item,index,arr)=>item&&arr.indexOf(item)===index);if(!members.length||!total)return;rememberState();state.splitBills.unshift({id:crypto.randomUUID(),title,total,paidBy,members,splitMethod:$("splitMethod").value||"equal",createdAt:today()});save();closeModal();render();showToast("Group bill created ✓");}
+function renderSplitBills(){const container=$("splitBills");if(!container)return;if(!state.splitBills.length){container.innerHTML='<div class="md:col-span-2 xl:col-span-3 rounded-2xl border border-dashed border-white/10 p-6"><p class="text-sm font-bold text-zinc-300">No group bills yet</p><p class="mt-1 text-xs text-zinc-500">Create a group bill to keep shared costs in one place.</p><button onclick="newSplit()" class="mt-3 text-xs font-bold text-lime-300">+ Create your first bill</button></div>';return;}container.innerHTML=state.splitBills.map(bill=>{const share=Number(bill.total)/Math.max(1,bill.members.length);const memberList=bill.members.join(", ");return `<div class="rounded-2xl border border-white/10 bg-black/20 p-4"><div class="flex justify-between items-center"><div><p class="text-sm font-black">${esc(bill.title)}</p><p class="text-[10px] text-zinc-500">${esc(memberList)}</p></div><span class="text-xs text-lime-300 font-bold">${money(bill.total)}</span></div><div class="mt-4 text-[11px] text-zinc-400 space-y-1"><p>Paid by: ${esc(bill.paidBy)}</p><p>Each share: ${money(share)}</p><p>Split mode: ${bill.splitMethod==="equal"?"Equal":"Custom"}</p></div></div>`;}).join("");}
+const goalUndoHistory={};
+function addGoalSaved(index,amount=100){
+ const goal=state.goals[index];if(!goal)return;
+ rememberState();
+ const prev=goal.saved;
+ goal.saved=Math.min(goal.target,goal.saved+amount);
+ goalUndoHistory[index]=goalUndoHistory[index]||[];
+ goalUndoHistory[index].push({saved:prev});
+ if(goalUndoHistory[index].length>10)goalUndoHistory[index].shift();
+ save();render();
+}
+function undoGoal(index){
+ const history=goalUndoHistory[index]||[];
+ const last=history.pop();
+ if(!last)return;
+ const goal=state.goals[index];if(!goal)return;
+ goal.saved=Math.max(0,Number(last.saved)||0);
+ save();render();
+}
 function render(){
  if(!state.budget)return;
- const spent=state.tx.reduce((s,t)=>s+t.amount,0),avail=state.budget-spent,p=state.budget?spent/state.budget*100:0;
- $("hello").textContent=state.name||"there";$("remaining").textContent=money(Math.max(avail,0));$("budgetLabel").textContent=money(state.budget);$("spent").textContent=money(spent);$("available").textContent=money(Math.max(avail,0));$("count").textContent=state.tx.length;$("pct").textContent=p.toFixed(1)+"%";$("bar").style.width=Math.min(100,p)+"%";
- const days=new Set(state.tx.map(x=>x.date)).size,avg=days?spent/days:0;$("avg").textContent=money(avg);$("runway").textContent=avg?Math.floor(Math.max(avail,0)/avg)+"d":"—";
- const lvl=!state.tx.length?["LEVEL 00","Waiting for data"]:p<30?["LEVEL 01","Financially Alive"]:p<55?["LEVEL 02","Doing Fine"]:p<75?["LEVEL 03","Budget Survivor"]:p<90?["LEVEL 04","Dangerously Broke"]:["LEVEL 05","Certified Cooked"];$("level").textContent=lvl[0];$("levelText").textContent=lvl[1];$("mood").textContent=!state.tx.length?"No data":p<55?"Looking healthy":p<75?"Getting spicy":p<90?"Bro slow down":"YOU ARE COOKED 💀";$("lock").innerHTML=state.locked?'<i class="fa-solid fa-lock-open mr-2"></i>Deactivate Lockdown':'<i class="fa-solid fa-lock mr-2"></i>Activate Lockdown';document.body.style.filter=state.locked?"saturate(.75)":"none";renderCats();renderTx();renderGoals()
+ const spent=state.tx.reduce((sum,item)=>sum+Number(item.amount||0),0);
+ const available=state.budget-spent;
+ const percentage=state.budget?spent/state.budget*100:0;
+ const todayTotal=state.tx.filter(item=>item.date===today()).reduce((sum,item)=>sum+Number(item.amount||0),0);
+ $("hello").textContent=state.name||"there";
+ $("remaining").textContent=money(Math.max(available,0));
+ $("budgetLabel").textContent=money(state.budget);
+ $("spent").textContent=money(spent);
+ $("available").textContent=money(Math.max(available,0));
+ $("count").textContent=state.tx.length;
+ $("todaySpend").textContent=money(todayTotal);
+ $("pct").textContent=percentage.toFixed(1)+"%";
+ $("bar").style.width=Math.min(100,percentage)+"%";
+ $("statsStrip").classList.toggle("hidden",!state.tx.length);
+ const days=new Set(state.tx.map(item=>item.date)).size;
+ const average=days?spent/days:0;
+ $("avg").textContent=money(average);
+ $("runway").textContent=average?Math.floor(Math.max(available,0)/average)+"d":"—";
+ const undoButton=$("undoButton");
+ if(undoButton){undoButton.disabled=!undoStack.length;undoButton.textContent=undoStack.length?`Undo (${undoStack.length})`:"Undo";}
+ const level=!state.tx.length?["LEVEL 00","Waiting for your first expense"]:percentage<30?["LEVEL 01","Financially Alive"]:percentage<55?["LEVEL 02","Doing Fine"]:percentage<75?["LEVEL 03","Budget Survivor"]:percentage<90?["LEVEL 04","Dangerously Broke"]:["LEVEL 05","Certified Cooked"];
+ $("level").textContent=level[0];$("levelText").textContent=level[1];
+ $("mood").textContent=!state.tx.length?"Start with one expense":percentage<55?"Looking healthy":percentage<75?"Getting spicy":percentage<90?"Bro slow down":"YOU ARE COOKED 💀";
+ $("lock").innerHTML=state.locked?'<i class="fa-solid fa-lock-open mr-2"></i>Deactivate Lockdown':'<i class="fa-solid fa-lock mr-2"></i>Activate Lockdown';
+ document.body.style.filter=state.locked?"saturate(.75)":"none";
+ renderCats();renderTx();renderGoals();renderSplitBills();renderInsights();renderDashboardSummary();renderDailyPulse();renderDailyLimit();
+ if($("coach"))$("coach").textContent=buildCoachMessage("toast");
 }
-function renderCats(){const sums={};Object.keys(CATS).forEach(k=>sums[k]=0);state.tx.forEach(t=>sums[t.cat]=(sums[t.cat]||0)+t.amount);const max=Math.max(...Object.values(sums),1);$("categories").innerHTML=Object.entries(sums).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="p-4 rounded-2xl bg-zinc-900/65 border border-white/5"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-zinc-800 grid place-items-center"><i class="fa-solid ${CATS[k][1]} text-zinc-300"></i></div><div class="flex-1"><div class="flex justify-between"><span class="text-sm font-semibold">${CATS[k][0]}</span><b>${money(v)}</b></div><div class="h-1.5 bg-zinc-800 rounded-full mt-2 overflow-hidden"><div class="progress bg-purple-500" style="width:${v/max*100}%"></div></div></div></div></div>`).join("")}
-function renderTx(){$("txs").innerHTML=state.tx.length?[...state.tx].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,50).map(t=>`<div class="flex items-center gap-3 p-3 rounded-xl bg-zinc-900/60"><div class="w-9 h-9 rounded-lg bg-zinc-800 grid place-items-center"><i class="fa-solid ${CATS[t.cat]?.[1]||CATS.other[1]} text-xs"></i></div><div class="flex-1 min-w-0"><p class="text-xs font-semibold truncate">${esc(t.merchant)}</p><p class="text-[10px] text-zinc-700">${esc(t.date)} · ${CATS[t.cat]?.[0]||"Other"}</p></div><b class="text-xs">${money(t.amount)}</b></div>`).join(""):'<div class="py-14 text-center text-zinc-700"><i class="fa-solid fa-inbox text-2xl"></i><p class="text-xs mt-3">No transactions yet.</p></div>'}
-function renderGoals(){$("goals").innerHTML=state.goals.map((g,i)=>{const p=Math.min(100,g.saved/g.target*100);return`<div class="glass rounded-3xl p-5"><div class="flex justify-between"><div class="flex gap-3 items-center"><div class="w-11 h-11 rounded-xl bg-purple-500/10 grid place-items-center"><i class="fa-solid ${g.icon||"fa-bullseye"} text-purple-300"></i></div><div><b class="text-sm">${esc(g.name)}</b><p class="text-[10px] text-zinc-600">Target ${money(g.target)}</p></div></div><b class="text-xs text-lime-300">${Math.round(p)}%</b></div><div class="h-2 bg-zinc-900 rounded-full mt-5"><div class="progress bg-lime-400" style="width:${p}%"></div></div><div class="flex justify-between text-[10px] text-zinc-600 mt-2"><span>${money(g.saved)} saved</span><span>${money(Math.max(0,g.target-g.saved))} left</span></div><button onclick="state.goals[${i}].saved=Math.min(state.goals[${i}].target,state.goals[${i}].saved+100);save();render()" class="w-full mt-4 py-2.5 rounded-xl bg-zinc-900 border border-white/5 text-xs font-bold">Add ${money(100)}</button></div>`}).join("")}
+function renderDashboardSummary(){
+ const categories=$("homeCategories");const recent=$("homeRecent");const insight=$("homeAiInsight");
+ if(!categories||!recent||!insight)return;
+ if(!state.tx.length){
+  categories.innerHTML='<div class="rounded-xl border border-dashed border-white/10 p-4"><p class="text-sm font-bold">No expenses yet</p><p class="mt-1 text-xs leading-5 text-zinc-500">Start tracking your spending to see where your money goes.</p><button onclick="addTx()" class="mt-3 text-xs font-bold text-purple-300">+ Add your first expense</button><button onclick="showView(\'more\')" class="block mt-2 text-xs text-zinc-400">Import a statement</button></div>';
+  recent.innerHTML='<p class="py-5 text-sm text-zinc-500">Your recent expenses will show up here.</p>';
+  insight.textContent="Add a few expenses and I’ll find patterns in your spending.";
+  return;
+ }
+ const totals={};state.tx.forEach(item=>{const key=item.cat||"other";totals[key]=(totals[key]||0)+Number(item.amount||0)});
+ categories.innerHTML=Object.entries(totals).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([key,total])=>`<div class="flex items-center justify-between gap-3 text-sm"><span class="text-zinc-400">${esc(CATS[key]?.[0]||"Other")}</span><b>${money(total)}</b></div>`).join("");
+ const latest=[...state.tx].sort((a,b)=>(b.date||"").localeCompare(a.date||"")).slice(0,4);
+ recent.innerHTML=latest.map(item=>`<div class="flex items-center justify-between gap-3 py-3"><div class="min-w-0"><p class="truncate text-sm font-semibold">${esc(item.merchant)}</p><p class="text-[11px] text-zinc-500">${esc(item.date)} · ${esc(CATS[item.cat]?.[0]||"Other")}</p></div><b class="shrink-0 text-sm">${money(item.amount)}</b></div>`).join("");
+ insight.textContent=buildCoachMessage("toast");
+}
+function renderDailyPulse(){const container=$("dailyPulse");if(!container)return;const todayDate=today();const dates=[...new Set(state.tx.map(t=>t.date))].slice(-3);const entries=dates.length?dates.map(date=>{const total=state.tx.filter(t=>t.date===date).reduce((sum,t)=>sum+Number(t.amount),0);return {date,total};}):[{date:todayDate,total:0}];container.innerHTML=entries.map(item=>{const label=new Date(item.date+"T12:00:00").toLocaleDateString("en-IN",{month:"short",day:"numeric"});return `<div class="rounded-2xl border border-white/10 bg-black/20 p-4"><p class="text-[10px] uppercase tracking-[.2em] text-zinc-600">${label}</p><h3 class="mt-3 text-xl font-black">${money(item.total)}</h3><p class="mt-2 text-[11px] text-zinc-500">${item.total ? "Tracked spend" : "No spend logged"}</p></div>`;}).join("");}
+function renderDailyLimit(){
+ const container=$("dailyLimitPanel");if(!container)return;
+ const limit=Number(state.dailyLimit)||0;
+ const spentToday=state.tx.filter(t=>t.date===today()).reduce((sum,t)=>sum+Number(t.amount),0);
+ let dailyContent;
+ if(limit>0){
+  const progress=Math.min(100,spentToday/limit*100);
+  const reached=spentToday>=limit;
+  dailyContent=`<div class="rounded-2xl border ${reached?"border-red-400/20 bg-red-400/5":"border-white/10 bg-black/20"} p-4"><div class="flex justify-between gap-3"><div><p class="text-xs text-zinc-400">Today’s logged spend</p><p class="mt-2 text-xl font-black ${reached?"text-red-300":"text-lime-300"}">${money(spentToday)} <span class="text-xs text-zinc-500 font-medium">of ${money(limit)}</span></p></div><p class="text-xs text-right ${reached?"text-red-300":"text-zinc-400"}">${reached?spentToday>limit?`${money(spentToday-limit)} over limit`:"Limit reached":`${money(limit-spentToday)} left`}</p></div><div class="h-2 bg-zinc-900 rounded-full mt-4 overflow-hidden"><div class="progress ${reached?"bg-red-400":"bg-lime-400"}" style="width:${progress}%"></div></div><p class="mt-2 text-[11px] text-zinc-500">${reached?"Daily limit reached. Take a pause before your next spend.":"You’re within today’s limit."}</p></div>`;
+  if(reached&&state.dailyLimitAlertDate!==today()){
+   state.dailyLimitAlertDate=today();save();
+   modal("Daily limit reached",`<div class="rounded-2xl border border-red-400/20 bg-red-400/5 p-4"><p class="text-sm text-zinc-300">You’ve logged <b class="text-red-300">${money(spentToday)}</b> today, reaching your daily limit of <b class="text-white">${money(limit)}</b>.</p><p class="mt-3 text-xs text-zinc-500">A quick pause can help keep the rest of your budget on track.</p></div><button onclick="closeModal()" class="w-full mt-4 py-3 rounded-xl bg-white/10 text-sm font-bold">Got it</button>`);
+  }
+ }else{
+  dailyContent='<div class="rounded-2xl border border-dashed border-white/10 p-4 text-sm text-zinc-500">No daily limit set yet. Add one in Settings to track today’s spending and get an in-app reminder when you reach it.</div>';
+ }
+ const todayKey=today();const now=new Date(`${todayKey}T12:00:00`);const dayOfWeek=(now.getDay()+6)%7;const completedDays=dayOfWeek;
+ let weeklyWin=0;
+ if(limit>0&&completedDays>0){
+  const monday=new Date(now);monday.setDate(now.getDate()-dayOfWeek);
+  for(let i=0;i<completedDays;i++){
+   const date=new Date(monday);date.setDate(monday.getDate()+i);
+   const key=`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
+   const daySpend=state.tx.filter(t=>t.date===key).reduce((sum,t)=>sum+Number(t.amount),0);
+   weeklyWin+=limit-daySpend;
+  }
+ }
+ const weeklyContent=limit>0&&completedDays>0&&weeklyWin>0
+  ?`<div class="mt-3 rounded-2xl border border-lime-400/15 bg-lime-400/5 p-4"><p class="text-sm font-bold text-lime-300">Great! ${money(weeklyWin)} stayed unspent against your daily limits this week 🎉</p><p class="mt-1 text-[11px] text-zinc-500">Based on logged spending across ${completedDays} completed day${completedDays===1?"":"s"} this week.</p></div>`
+  :`<div class="mt-3 rounded-2xl border border-white/10 bg-black/20 p-4"><p class="text-sm font-bold text-zinc-300">${limit>0?"Keep it up — your weekly win is building.":"Set a daily limit to unlock your weekly progress message."}</p><p class="mt-1 text-[11px] text-zinc-500">${limit>0?"We’ll count completed days only, so today’s spending is still in progress.":"Your progress is calculated from expenses you log here."}</p></div>`;
+ container.innerHTML=dailyContent+weeklyContent;
+}
+function renderCats(){const container=$("categories");if(!container)return;if(!state.tx.length){container.innerHTML='<div class="rounded-2xl border border-dashed border-white/10 p-6 text-center"><p class="text-sm font-bold">No spending breakdown yet</p><p class="mt-1 text-xs text-zinc-500">Add an expense to see your category totals.</p><button onclick="addTx()" class="mt-3 text-xs font-bold text-purple-300">+ Add first expense</button></div>';return;}const sums={};Object.keys(CATS).forEach(k=>sums[k]=0);state.tx.forEach(t=>{sums[t.cat||"other"]=(sums[t.cat||"other"]||0)+Number(t.amount||0)});const max=Math.max(...Object.values(sums),1);container.innerHTML=Object.entries(sums).filter(([,amount])=>amount>0).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="p-4 rounded-2xl bg-zinc-900/65 border border-white/5"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-zinc-800 grid place-items-center"><i class="fa-solid ${CATS[k]?.[1]||CATS.other[1]} text-zinc-300"></i></div><div class="flex-1"><div class="flex justify-between"><span class="text-sm font-semibold">${CATS[k]?.[0]||"Other"}</span><b>${money(v)}</b></div><div class="h-1.5 bg-zinc-800 rounded-full mt-2 overflow-hidden"><div class="progress bg-purple-500" style="width:${v/max*100}%"></div></div></div></div></div>`).join("")}
+function renderTx(){const clearImported=$("clearImportedButton");if(clearImported){const count=state.tx.filter(t=>Number(t.confidence)<1).length;clearImported.classList.toggle("hidden",count===0);clearImported.textContent=count?`Remove imported (${count})`:"Remove imported";}const container=$("txs");if(!container)return;container.innerHTML=state.tx.length?[...state.tx].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,50).map(t=>`<div class="flex items-center gap-3 p-3 rounded-xl bg-zinc-900/60"><div class="w-9 h-9 rounded-lg bg-zinc-800 grid place-items-center"><i class="fa-solid ${CATS[t.cat]?.[1]||CATS.other[1]} text-xs"></i></div><div class="flex-1 min-w-0"><p class="text-xs font-semibold truncate">${esc(t.merchant)}</p><p class="text-[10px] text-zinc-500">${esc(t.date)} · ${CATS[t.cat]?.[0]||"Other"}</p></div><b class="text-xs">${money(t.amount)}</b></div>`).join(""):'<div class="py-10 text-center"><p class="text-sm font-bold text-zinc-300">No expenses yet</p><p class="mt-1 text-xs text-zinc-500">Your full transaction list will appear here.</p><button onclick="addTx()" class="mt-3 text-xs font-bold text-purple-300">+ Add expense</button></div>'}
+function renderGoals(){const entries=state.goals.map((g,i)=>{const p=Math.min(100,g.saved/g.target*100);const history=(goalUndoHistory[i]||[]);const canUndo=history.length>0;return`<div class="glass rounded-3xl p-5"><div class="flex justify-between"><div class="flex gap-3 items-center"><div class="w-11 h-11 rounded-xl bg-purple-500/10 grid place-items-center"><i class="fa-solid ${g.icon||"fa-bullseye"} text-purple-300"></i></div><div><b class="text-sm">${esc(g.name)}</b><p class="text-[10px] text-zinc-600">Target ${money(g.target)}</p></div></div><b class="text-xs text-lime-300">${Math.round(p)}%</b></div><div class="h-2 bg-zinc-900 rounded-full mt-5"><div class="progress bg-lime-400" style="width:${p}%"></div></div><div class="flex justify-between text-[10px] text-zinc-600 mt-2"><span>${money(g.saved)} saved</span><span>${money(Math.max(0,g.target-g.saved))} left</span></div><div class="mt-4 grid grid-cols-2 gap-2"><button onclick="addGoalSaved(${i},100)" class="py-2.5 rounded-xl bg-zinc-900 border border-white/5 text-xs font-bold">Add ${money(100)}</button><button onclick="undoGoal(${i})" class="py-2.5 rounded-xl bg-red-500/10 text-red-300 text-xs font-bold ${canUndo?'':'opacity-40 cursor-not-allowed'}" ${canUndo?'':'disabled'}>Undo</button></div></div>`}).join(""); $("goals").innerHTML=entries;}
 
 render();
+showView("dashboard");
 </script>
 </body>
 </html>
