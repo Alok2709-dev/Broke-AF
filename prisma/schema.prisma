@@ -16,6 +16,7 @@ model User {
   updatedAt     DateTime  @updatedAt
   name          String?
   email         String    @unique
+  passwordHash  String?
   emailVerified DateTime?
   image         String?
   accounts      Account[]

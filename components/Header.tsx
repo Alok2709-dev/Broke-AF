@@ -1,5 +1,8 @@
+'use client'
+
 import React from 'react'
 import Link from 'next/link'
+import { signOut } from 'next-auth/react'
 
 export default function Header() {
   return (
@@ -13,6 +16,7 @@ export default function Header() {
           <Link href="/dashboard" className="text-sm text-gray-300 hover:text-white">Dashboard</Link>
           <Link href="/transactions" className="text-sm text-gray-300 hover:text-white">Transactions</Link>
           <Link href="/ai" className="text-sm text-gray-300 hover:text-white">AI Coach</Link>
+          <button onClick={() => signOut({ callbackUrl: '/' })} className="text-sm text-gray-400 hover:text-white">Log out</button>
         </nav>
       </div>
     </header>
